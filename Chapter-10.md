@@ -19,7 +19,7 @@
 它们是松散耦合且可独立部署的。
 他们有自己独立的堆栈，包括数据模型。
 它们通过 REST 或 gRPC 等协议相互通信。
-他们遵循“单一责任”原则；也就是说，一个微服务应该“做一件事，把它做好”。
+他们遵循"单一责任"原则；也就是说，一个微服务应该"做一件事，把它做好"。
 让我们将这些原则应用于电子商务店面的具体示例。像这样的应用程序有用户向我们假设的组织提供运输和支付信息，然后他们购买我们的产品。在单体架构中，我们有一个应用程序和一个数据库来管理用户数据、帐户数据（例如他们的订单和运输信息）以及我们可用的产品。在微服务架构中，我们将有多个服务，每个服务都有自己的数据库来处理不同的问题。我们可能有一个带有自己的数据库的产品 API，它只处理产品周围的数据。我们可能有一个带有自己的数据库的用户 API，它处理用户帐户信息等。
 
 为什么我们会选择这种架构风格而不是单体架构？单体对于大多数应用来说都非常好；它们更易于管理。进行代码更改，并运行所有测试套件以确保你看似很小的更改不会影响系统的其他区域。运行测试后，将应用程序部署为一个单元。你的应用程序在负载下是否表现不佳？在这种情况下，你可以水平或垂直扩展，部署更多应用程序实例或部署到更强大的机器以处理额外用户。虽然管理单体在操作上更简单，但这种简单性也有可能很重要的缺点，具体取决于你想要做出的权衡。
@@ -102,7 +102,7 @@ app.add_routes(routes)
 web.run_app(app, port=8001)
 ```
 
-接下来，让我们实现用户购物车和用户喜爱的服务。这两者的数据模型相同，因此服务几乎相同，不同之处在于表名。让我们从“用户购物车”和“用户收藏”这两个数据模型开始。我们还将在这些表中插入一些记录，因此我们有一些数据可以开始。首先，我们将从用户购物车表开始。
+接下来，让我们实现用户购物车和用户喜爱的服务。这两者的数据模型相同，因此服务几乎相同，不同之处在于表名。让我们从"用户购物车"和"用户收藏"这两个数据模型开始。我们还将在这些表中插入一些记录，因此我们有一些数据可以开始。首先，我们将从用户购物车表开始。
 
 清单 10.2 用户购物车表
 
@@ -141,7 +141,7 @@ INSERT INTO user_favorite VALUES (3, 3);
 
 为了模拟多个数据库，我们需要在各自的 Postgres 数据库中创建这些表。回想第 5 章，我们可以使用 psql 命令行实用程序运行任意 SQL，这意味着我们可以使用以下两个命令为用户收藏夹和用户购物车创建两个数据库：
 
-```mysql
+```sh
 sudo -u postgres psql -c "CREATE DATABASE cart;"
 sudo -u postgres psql -c "CREATE DATABASE favorites;"
 ```
@@ -158,19 +158,22 @@ from asyncpg.pool import Pool
 DB_KEY = 'database'
  
  
-async def create_database_pool(app: Application,
-                               host: str,
-                               port: int,
-                               user: str,
-                               database: str,
-                               password: str):
-    pool: Pool = await asyncpg.create_pool(host=host,
-                                           port=port,
-                                           user=user,
-                                           password=password,
-                                           database=database,
-                                           min_size=6,
-                                           max_size=6)
+async def create_database_pool(
+        app: Application,
+        host: str,
+        port: int,
+        user: str,
+        database: str,
+        password: str):
+    pool: Pool = await asyncpg.create_pool(
+        host=host,
+        port=port,
+        user=user,
+        password=password,
+        database=database,
+        min_size=6,
+        max_size=6
+    )
     app[DB_KEY] = pool
  
  
@@ -212,12 +215,16 @@ async def favorites(request: Request) -> Response:
  
  
 app = web.Application()
-app.on_startup.append(functools.partial(create_database_pool,
-                                        host='127.0.0.1',
-                                        port=5432,
-                                        user='postgres',
-                                        password='password',
-                                        database='favorites'))
+app.on_startup.append(
+    functools.partial(
+        create_database_pool,
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        password='password',
+        database='favorites'
+    )
+)
 app.on_cleanup.append(destroy_database_pool)
  
 app.add_routes(routes)
@@ -255,12 +262,16 @@ async def time(request: Request) -> Response:
  
  
 app = web.Application()
-app.on_startup.append(functools.partial(create_database_pool,
-                                        host='127.0.0.1',
-                                        port=5432,
-                                        user='postgres',
-                                        password='password',
-                                        database='cart'))
+app.on_startup.append(
+    functools.partial(
+        create_database_pool,
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        password='password',
+        database='cart'
+    )
+)
 app.on_cleanup.append(destroy_database_pool)
  
 app.add_routes(routes)
@@ -290,12 +301,16 @@ async def products(request: Request) -> Response:
  
  
 app = web.Application()
-app.on_startup.append(functools.partial(create_database_pool,
-                                        host='127.0.0.1',
-                                        port=5432,
-                                        user='postgres',
-                                        password='password',
-                                        database='products'))
+app.on_startup.append(
+    functools.partial(
+        create_database_pool,
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        password='password',
+        database='products'
+    )
+)
 app.on_cleanup.append(destroy_database_pool)
  
 app.add_routes(routes)
@@ -312,12 +327,14 @@ API 不应等待产品服务超过 1 秒。如果时间超过 1 秒，我们应�
 
 接下来，让我们定义我们希望我们的响应看起来像什么。导航栏所需的只是购物车和收藏夹列表中的商品数量，因此我们的响应只是将它们表示为标量值。由于我们的购物车或喜爱的服务可能会超时或出现错误，我们将允许此值为 null。对于我们的产品数据，我们只希望我们的普通产品数据增加库存值，因此我们将把这些数据添加到产品数组中。这意味着我们将收到类似于以下内容的响应：
 
-```
+```json
 {
  "cart_items": 1,
  "favorite_items": null,
- "products": [{"product_id": 4, "inventory": 4},
-              {"product_id": 3, "inventory": 65}]
+ "products": [
+     {"product_id": 4, "inventory": 4},
+     {"product_id": 3, "inventory": 65}
+ ]
 }
 ```
 
@@ -368,21 +385,28 @@ async def all_products(request: Request) -> Response:
             product_response = await products.result().json()                         ❸
             product_results: List[Dict] = await get_products_with_inventory(session, product_response)
  
-            cart_item_count: Optional[int] = await get_response_item_count(cart,
-                                                                           done,
-                                                                           pending,
-                                                                           'Error getting user cart.')
-            favorite_item_count: Optional[int] = await get_response_item_count(favorites,
-                                                                               done,
-                                                                               pending,
-                                                                               'Error getting user favorites.')
-            return web.json_response({'cart_items': cart_item_count,
-                                      'favorite_items': favorite_item_count,
-                                      'products': product_results})
+            cart_item_count: Optional[int] = await get_response_item_count(
+                cart,
+                done,
+                pending,
+                'Error getting user cart.'
+            )
+            favorite_item_count: Optional[int] = await get_response_item_count(
+                favorites,
+                done,
+                pending,
+                'Error getting user favorites.'
+            )
+            return web.json_response(
+                {
+                    'cart_items': cart_item_count,
+                    'favorite_items': favorite_item_count,
+                    'products': product_results
+                }
+            )
  
  
-async def get_products_with_inventory(session: ClientSession,                         ❹
-                      product_response) -> List[Dict]:                                ❹
+async def get_products_with_inventory(session: ClientSession, product_response) -> List[Dict]:    ❹
     def get_inventory(session: ClientSession, product_id: str) -> Task:
         url = f"{INVENTORY_BASE}/products/{product_id}/inventory"
         return asyncio.create_task(session.get(url))
@@ -406,8 +430,10 @@ async def get_products_with_inventory(session: ClientSession,                   
         else:
             product_id = inventory_tasks_to_product_id[done_task]
             product_results.append(create_product_record(product_id, None))
-            logging.exception(f'Error getting inventory for id {product_id}',
-                              exc_info=inventory_tasks_to_product_id[done_task].exception())
+            logging.exception(
+                f'Error getting inventory for id {product_id}',
+                exc_info=inventory_tasks_to_product_id[done_task].exception()
+            )
  
     for pending_task in inventory_pending:
         pending_task.cancel()
@@ -417,10 +443,11 @@ async def get_products_with_inventory(session: ClientSession,                   
     return product_results
  
  
-async def get_response_item_count(task: Task,
-                                  done: Set[Awaitable],
-                                  pending: Set[Awaitable],
-                                  error_msg: str) -> Optional[int]:                   ❺
+async def get_response_item_count(
+    	task: Task,
+        done: Set[Awaitable],
+        pending: Set[Awaitable],
+        error_msg: str) -> Optional[int]:                   ❺
     if task in done and task.exception() is None:
         return len(await task.result().json())
     elif task in pending:
@@ -471,10 +498,7 @@ class TooManyRetries(Exception):
     pass
  
  
-async def retry(coro: Callable[[], Awaitable],
-                max_retries: int,
-                timeout: float,
-                retry_interval: float):
+async def retry(coro: Callable[[], Awaitable], max_retries: int, timeout: float, retry_interval: float):
     for retry_num in range(0, max_retries):
         try:
             return await asyncio.wait_for(coro(), timeout=timeout)                                           ❶
@@ -506,18 +530,12 @@ async def main():
         await asyncio.sleep(1)
  
     try:
-        await retry(always_fail,
-                    max_retries=3,
-                    timeout=.1,
-                    retry_interval=.1)
+        await retry(always_fail, max_retries=3, timeout=.1, retry_interval=.1)
     except TooManyRetries:
         print('Retried too many times!')
  
     try:
-        await retry(always_timeout,
-                    max_retries=3,
-                    timeout=.1,
-                    retry_interval=.1)
+        await retry(always_timeout, max_retries=3, timeout=.1, retry_interval=.1)
     except TooManyRetries:
         print('Retried too many times!')
  
@@ -527,7 +545,7 @@ asyncio.run(main())
 
 对于两次重试，我们将超时和重试间隔定义为 100 毫秒，最大重试量为 3。这意味着我们给协程 100 毫秒的时间来完成，如果它在这段时间内没有完成，或者失败，我们会等待 100 毫秒，然后再试一次。运行这个清单，你应该看到每个协程尝试运行 3 次，最后打印 Retried too many times!，导致类似于以下的输出（为简洁起见省略了回溯）：
 
-```
+```sh
 ERROR:root:Exception while waiting (tried 1 times), retrying.
 Exception: I've failed!
 ERROR:root:Exception while waiting (tried 2 times), retrying.
@@ -543,25 +561,37 @@ Retried too many times!
 
 使用它，我们可以为我们的产品后端添加一些简单的重试逻辑。例如，假设我们想重试对产品、购物车和收藏服务的初始请求几次，然后再考虑它们的错误不可恢复。我们可以通过将每个请求包装在重试协程中来做到这一点，如下所示：
 
-```
+```python
 product_request = functools.partial(session.get, f'{PRODUCT_BASE}/products')
 favorite_request = functools.partial(session.get, f'{FAVORITE_BASE}/users/5/favorites')
 cart_request = functools.partial(session.get, f'{CART_BASE}/users/5/cart')
  
-products = asyncio.create_task(retry(product_request,
-                                     max_retries=3,
-                                     timeout=.1,
-                                     retry_interval=.1))
+products = asyncio.create_task(
+    retry(
+        product_request,
+        max_retries=3,
+        timeout=.1,
+        retry_interval=.1
+    )
+)
  
-favorites = asyncio.create_task(retry(favorite_request,
-                                      max_retries=3,
-                                      timeout=.1,
-                                      retry_interval=.1))
+favorites = asyncio.create_task(
+    retry(
+        favorite_request,
+        max_retries=3,
+        timeout=.1,
+        retry_interval=.1
+    )
+)
  
-cart = asyncio.create_task(retry(cart_request,
-                                 max_retries=3,
-                                 timeout=.1,
-                                 retry_interval=.1))
+cart = asyncio.create_task(
+    retry(
+        cart_request,
+        max_retries=3,
+        timeout=.1,
+        retry_interval=.1
+    )
+)
  
 requests = [products, favorites, cart]
 done, pending = await asyncio.wait(requests, timeout=1.0)
@@ -572,13 +602,13 @@ done, pending = await asyncio.wait(requests, timeout=1.0)
 ### 10.3.5 断路器模式
 我们在实现中仍然存在的一个问题是，当一项服务始终足够慢以至于它总是超时时，就会发生这种情况。当下游服务负载不足、发生其他网络问题或大量其他应用程序或网络错误时，可能会发生这种情况。
 
-你可能会问：“好吧，我们的应用程序优雅地处理了超时；用户在看到错误或获取部分数据之前不会等待超过 1 秒，所以有什么问题？”你问的没错。然而，虽然我们将系统设计得稳健且有弹性，但请考虑用户体验。例如，如果购物车服务遇到问题，总是需要 1 秒才能超时，这意味着所有用户都将等待 1 秒来等待服务的结果。
+你可能会问："好吧，我们的应用程序优雅地处理了超时；用户在看到错误或获取部分数据之前不会等待超过 1 秒，所以有什么问题？"你问的没错。然而，虽然我们将系统设计得稳健且有弹性，但请考虑用户体验。例如，如果购物车服务遇到问题，总是需要 1 秒才能超时，这意味着所有用户都将等待 1 秒来等待服务的结果。
 
 在这种情况下，由于购物车服务的这个问题可能会持续一段时间，当我们知道这个问题很可能发生时，任何点击我们后端换前端的人都会被卡住等待 1 秒。有没有办法让可能失败的呼叫短路，以免给用户造成不必要的延迟？
 
-有一个恰当命名的模式来处理这个问题，称为断路器模式。由 Michael Nygard 的书 Release It (The Pragmatic Bookshelf, 2017) 推广，这种模式让我们“翻转断路器”，当我们在每个时间段内出现指定数量的错误时，我们可以使用它来绕过慢速服务，直到它的问题得到了解决，确保我们对用户的响应保持尽可能快。
+有一个恰当命名的模式来处理这个问题，称为断路器模式。由 Michael Nygard 的书 Release It (The Pragmatic Bookshelf, 2017) 推广，这种模式让我们"翻转断路器"，当我们在每个时间段内出现指定数量的错误时，我们可以使用它来绕过慢速服务，直到它的问题得到了解决，确保我们对用户的响应保持尽可能快。
 
-与电气断路器非常相似，基本断路器模式有两种与之相关的状态，与电气面板上的普通断路器相同：打开状态和关闭状态。封闭状态是一条幸福的道路；我们向服务发出请求，它正常返回。开路状态发生在电路跳闸时。在这种状态下，我们不会费心去调用服务，因为我们知道它有问题；相反，我们立即返回一个错误。断路器模式阻止我们向糟糕的服务供电。除了这两种状态之外，还有一种“半开”状态。当我们在某个时间间隔后处于打开状态时，就会发生这种情况。在这种状态下，我们发出一个请求以检查服务问题是否已修复。如果是，我们关闭断路器，如果不是，我们保持打开状态。为了使我们的示例简单，我们将跳过半开状态，只关注关闭和打开状态，如图 10.3 所示。
+与电气断路器非常相似，基本断路器模式有两种与之相关的状态，与电气面板上的普通断路器相同：打开状态和关闭状态。封闭状态是一条幸福的道路；我们向服务发出请求，它正常返回。开路状态发生在电路跳闸时。在这种状态下，我们不会费心去调用服务，因为我们知道它有问题；相反，我们立即返回一个错误。断路器模式阻止我们向糟糕的服务供电。除了这两种状态之外，还有一种"半开"状态。当我们在某个时间间隔后处于打开状态时，就会发生这种情况。在这种状态下，我们发出一个请求以检查服务问题是否已修复。如果是，我们关闭断路器，如果不是，我们保持打开状态。为了使我们的示例简单，我们将跳过半开状态，只关注关闭和打开状态，如图 10.3 所示。
 
 ![](./images/10-3.png)
 
@@ -599,12 +629,13 @@ class CircuitOpenException(Exception):
  
 class CircuitBreaker:
  
-    def __init__(self,
-                 callback,
-                 timeout: float,
-                 time_window: float,
-                 max_failures: int,
-                 reset_interval: float):
+    def __init__(
+            self,
+            callback,
+            timeout: float,
+            time_window: float,
+            max_failures: int,
+            reset_interval: float):
         self.callback = callback
         self.timeout = timeout
         self.time_window = time_window
@@ -663,11 +694,13 @@ async def main():
     async def slow_callback():
         await asyncio.sleep(2)
  
-    cb = CircuitBreaker(slow_callback,
-                        timeout=1.0,
-                        time_window=5,
-                        max_failures=2,
-                        reset_interval=5)
+    cb = CircuitBreaker(
+        slow_callback,
+        timeout=1.0,
+        time_window=5,
+        max_failures=2,
+        reset_interval=5
+    )
  
     for _ in range(4):
         try:
@@ -690,7 +723,7 @@ asyncio.run(main())
 
 在前面的清单中，我们创建了一个具有 1 秒超时时间的断路器，它允许在 5 秒间隔内发生两次故障，并在断路器打开后 5 秒后重置。然后我们尝试快速向断路器发出四个请求。前两个应该在超时失败之前需要 1 秒，然后每个后续调用都会在断路器打开时立即失败。然后我们睡 5 秒；这让断路器的 reset_interval 过去了，所以它应该回到关闭状态并再次开始调用我们的回调。运行这个，你应该看到如下输出：
 
-```
+```sh
 Circuit is closed, requesting!
 Circuit is closed, requesting!
 Circuit is open, failing fast!

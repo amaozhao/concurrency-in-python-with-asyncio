@@ -114,10 +114,12 @@ class MockSocket:
         self.socket_closed = True
  
  
-user_names_to_sockets = {'John': MockSocket(),
-                         'Terry': MockSocket(),
-                         'Graham': MockSocket(),
-                         'Eric': MockSocket()}
+user_names_to_sockets = {
+    'John': MockSocket(),
+    'Terry': MockSocket(),
+    'Graham': MockSocket(),
+    'Eric': MockSocket()
+}
  
  
 async def user_disconnect(username: str):          ❷
@@ -128,9 +130,7 @@ async def user_disconnect(username: str):          ❷
  
 async def message_all_users():                     ❸
     print('Creating message tasks')
-    messages = [socket.send(f'Hello {user}')
-                for user, socket in
-                user_names_to_sockets.items()]
+    messages = [socket.send(f'Hello {user}') for user, socket in user_names_to_sockets.items()]
     await asyncio.gather(*messages)
  
  
@@ -279,10 +279,12 @@ class MockSocket:
         self.socket_closed = True
  
  
-user_names_to_sockets = {'John': MockSocket(),
-                         'Terry': MockSocket(),
-                         'Graham': MockSocket(),
-                         'Eric': MockSocket()}
+user_names_to_sockets = {
+    'John': MockSocket(),
+    'Terry': MockSocket(),
+    'Graham': MockSocket(),
+    'Eric': MockSocket()
+}
  
  
 async def user_disconnect(username: str, user_lock: Lock):
@@ -296,16 +298,13 @@ async def user_disconnect(username: str, user_lock: Lock):
 async def message_all_users(user_lock: Lock):
     print('Creating message tasks')
     async with user_lock:                                ❷
-        messages = [socket.send(f'Hello {user}')
-                    for user, socket in
-                    user_names_to_sockets.items()]
+        messages = [socket.send(f'Hello {user}') for user, socket in user_names_to_sockets.items()]
         await asyncio.gather(*messages)
  
  
 async def main():
     user_lock = Lock()
-    await asyncio.gather(message_all_users(user_lock),
-                         user_disconnect('Eric', user_lock))
+    await asyncio.gather(message_all_users(user_lock), user_disconnect('Eric', user_lock))
  
  
 asyncio.run(main())
@@ -416,7 +415,7 @@ asyncio.run(main())
 
 虽然取决于外部延迟因素，输出将是不确定的，但你应该会看到类似于以下内容的输出：
 
-```
+```sh
 Acquired semaphore, requesting...
 Acquired semaphore, requesting...
 Acquired semaphore, requesting...
@@ -430,7 +429,7 @@ Acquired semaphore, requesting...
 
 每次请求完成时，都会释放信号量，这意味着可以开始等待信号量的阻塞任务。这意味着我们在给定时间最多只能运行 10 个请求，当一个请求完成时，我们可以启动一个新请求。
 
-这解决了并发运行的请求过多的问题，但上面的代码是突发的，这意味着它有可能同时突发 10 个请求，从而产生潜在的流量峰值。如果我们担心我们正在调用的 API 的负载峰值，这可能是不可取的。如果你只需要在某个单位时间内爆发出一定数量的请求，则需要将其与流量整形算法的实现一起使用，例如“漏桶”或“令牌桶”。
+这解决了并发运行的请求过多的问题，但上面的代码是突发的，这意味着它有可能同时突发 10 个请求，从而产生潜在的流量峰值。如果我们担心我们正在调用的 API 的负载峰值，这可能是不可取的。如果你只需要在某个单位时间内爆发出一定数量的请求，则需要将其与流量整形算法的实现一起使用，例如"漏桶"或"令牌桶"。
 
 ### 11.3.1 有界信号量
 信号量的一个方面是调用 release 的次数多于我们调用的 acquire 是有效的。如果我们总是使用带有 async with 块的信号量，这是不可能的，因为每次获取都会自动与发布配对。但是，如果我们需要对发布和获取机制进行更细粒度的控制（例如，也许我们有一些分支代码，其中一个分支让我们比另一个更早发布），我们可能会遇到问题。作为一个例子，让我们看看当我们有一个正常的协程获取和释放一个带有 async with 块的信号量时会发生什么，而该协程正在执行另一个协程调用 release。
@@ -459,14 +458,18 @@ async def main():
     semaphore = Semaphore(2)
  
     print("Acquiring twice, releasing three times...")
-    await asyncio.gather(acquire(semaphore),
-                         acquire(semaphore),
-                         release(semaphore))
+    await asyncio.gather(
+        acquire(semaphore),
+        acquire(semaphore),
+        release(semaphore)
+    )
  
     print("Acquiring three times...")
-    await asyncio.gather(acquire(semaphore),
-                         acquire(semaphore),
-                         acquire(semaphore))
+    await asyncio.gather(
+        acquire(semaphore),
+        acquire(semaphore),
+        acquire(semaphore)
+    )
  
  
 asyncio.run(main())
@@ -474,7 +477,7 @@ asyncio.run(main())
 
 在前面的清单中，我们创建了一个带有两个许可的信号量。然后我们运行两次获取调用和一次释放调用，这意味着我们将调用释放三次。我们第一次调用 gather 似乎运行良好，给了我们以下输出：
 
-```python
+```sh
 Acquiring twice, releasing three times...
 Waiting to acquire
 Acquired
@@ -488,7 +491,7 @@ Releasing
 
 但是，我们第二次获取信号量三次的调用遇到了问题，我们一次获取了三次锁！我们无意中增加了信号量可用的许可数量：
 
-```python
+```sh
 Acquiring three times...
 Waiting to acquire
 Acquired
@@ -636,9 +639,7 @@ class FileServer:
         self.upload_event = asyncio.Event()
  
     async def start_server(self):
-        server = await asyncio.start_server(self._client_connected,
-                                            self.host,
-                                            self.port)
+        server = await asyncio.start_server(self._client_connected, self.host, self.port)
         await server.serve_forever()
  
     async def dump_contents_on_complete(self, upload: FileUpload):
@@ -663,7 +664,7 @@ asyncio.run(main())
 
 我们可以使用 netcat 来测试这个服务器。在你的文件系统上选择一个文件，然后运行以下命令，将 file 替换为你选择的文件：
 
-```python
+```sh
 cat file | nc localhost 9000
 ```
 
@@ -671,7 +672,7 @@ cat file | nc localhost 9000
 
 事件需要注意的一个缺点是它们触发的频率可能比你的协程响应它们的频率高。假设我们在一种生产者-消费者工作流中使用单个事件来唤醒多个任务。如果我们所有的工作任务都忙了很长时间，事件可能会在我们工作的时候运行，而我们永远看不到它。让我们创建一个虚拟示例来演示这一点。我们将创建两个工作任务，每个任务执行 5 秒的工作。我们还将创建一个每秒触发一个事件的任务，超过消费者可以处理的速度。
 
-清单 11.13 一个工人落后于一个事件
+清单 11.13 一个 worker 落后于一个事件
 
 ```python
 import asyncio
@@ -763,7 +764,7 @@ asyncio.run(main())
 
 fire_event 协程方法会休眠一点，然后获取条件并调用 notify_all 方法，该方法将唤醒当前正在等待条件的所有任务。然后，在我们的主协程中，我们创建一个 fire_event 任务和两个 do_work 任务并同时运行它们。运行此程序时，如果应用程序运行，你将看到以下重复：
 
-```python
+```sh
 Worker 1: waiting for condition lock...
 Worker 1: acquired lock, releasing and waiting for condition...
 Worker 2: waiting for condition lock...
@@ -848,7 +849,7 @@ asyncio.run(main())
 
 在我们的 execute 方法中，我们在 async with 块中获取条件对象，然后我们使用谓词调用 wait_for，以检查状态是否为 INITIALIZED。这将阻塞直到我们的数据库连接完全初始化，防止我们在连接存在之前意外发出查询。然后，在我们的主协程中，我们创建一个连接类并创建两个任务来运行查询，然后是一个任务来初始化连接。运行此代码，你将看到以下输出，表明我们的查询在运行查询之前正确等待初始化任务完成：
 
-```python
+```sh
 execute: Waiting for connection to initialize
 _is_initialized: Connection not finished initializing, state is ConnectionState.WAIT_INIT
 execute: Waiting for connection to initialize

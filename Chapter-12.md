@@ -21,7 +21,7 @@
 
 这是异步队列让我们做的核心。我们将多个等待处理的工作项添加到队列中。然后，我们让多个工作人员在可用于执行任务时从队列中提取项目。
 
-让我们通过构建我们的超市示例来探索这一点。我们会将我们的工人任务视为收银员，而我们的“工作项目”将是客户结账。我们将为客户提供收银员需要扫描的单独产品列表。有些项目比其他项目需要更长的时间来扫描；例如，香蕉必须称重并输入其 SKU 代码。酒精饮料需要经理检查客户的身份证。
+让我们通过构建我们的超市示例来探索这一点。我们会将我们的工人任务视为收银员，而我们的"工作项目"将是客户结账。我们将为客户提供收银员需要扫描的单独产品列表。有些项目比其他项目需要更长的时间来扫描；例如，香蕉必须称重并输入其 SKU 代码。酒精饮料需要经理检查客户的身份证。
 
 对于我们的超市结账场景，我们将实现一些数据类来表示产品，用整数表示收银员结账所需的时间（以秒为单位）。我们还将建立一个客户类别，其中包含他们想购买的随机产品集。然后，我们将这些客户放入 asyncio 队列中，以代表我们的结帐行。我们还将创建几个工作任务来代表我们的收银员。这些任务将从队列中拉出客户，循环浏览他们的所有产品，并在结账所需的时间睡觉，以模拟结账过程。
 
@@ -49,34 +49,40 @@ class Customer:
 async def checkout_customer(queue: Queue, cashier_number: int):
     while not queue.empty():                                              ❶
         customer: Customer = queue.get_nowait()
-        print(f'Cashier {cashier_number} '
-              f'checking out customer '
-              f'{customer.customer_id}')
+        print(
+            f'Cashier {cashier_number} '
+            f'checking out customer '
+            f'{customer.customer_id}'
+        )
         for product in customer.products:                                 ❷
-            print(f"Cashier {cashier_number} "
-                  f"checking out customer "
-                  f"{customer.customer_id}'s {product.name}")
+            print(
+                f"Cashier {cashier_number} "
+                f"checking out customer "
+                f"{customer.customer_id}'s {product.name}"
+            )
             await asyncio.sleep(product.checkout_time)
-        print(f'Cashier {cashier_number} '
-              f'finished checking out customer '
-              f'{customer.customer_id}')
+        print(
+            f'Cashier {cashier_number} '
+            f'finished checking out customer '
+            f'{customer.customer_id}'
+        )
         queue.task_done()
  
  
 async def main():
     customer_queue = Queue()
  
-    all_products = [Product('beer', 2),
-                    Product('bananas', .5),
-                    Product('sausage', .2),
-                    Product('diapers', .2)]
+    all_products = [
+        Product('beer', 2),
+        Product('bananas', .5),
+        Product('sausage', .2),
+        Product('diapers', .2)
+    ]
  
     for i in range(10):                                                   ❸
-        products = [all_products[randrange(len(all_products))]
-                    for _ in range(randrange(10))]
+        products = [all_products[randrange(len(all_products))] for _ in range(randrange(10))]
         customer_queue.put_nowait(Customer(i, products))
-    cashiers = [asyncio.create_task(checkout_customer(customer_queue, i)) ❹
-                for i in range(3)]                                        ❹
+    cashiers = [asyncio.create_task(checkout_customer(customer_queue, i)) for i in range(3)]            ❹
     await asyncio.gather(customer_queue.join(), *cashiers)
  
 asyncio.run(main())
@@ -85,14 +91,14 @@ asyncio.run(main())
 ❶ 继续检查客户是否排队。
 ❷检查每个客户的产品。
 ❸ 用随机产品创建 10 个客户。
-❹ 创建三个“收银员”或工人任务来结账客户。
+❹ 创建三个"收银员"或工人任务来结账客户。
 在前面的清单中，我们创建了两个数据类：一个用于产品，一个用于超市客户。产品由产品名称和收银员在收银机中输入该项目所需的时间（以秒为单位）组成。客户有许多产品要带到收银台购买。我们还定义了一个 checkout_customer 协程函数，它完成了结账客户的工作。虽然我们的队列中有客户，但它使用 queue.get_nowait() 从队列的前面拉出一个客户，并使用 asyncio.sleep 模拟扫描产品的时间。客户签出后，我们调用 queue.task_done。这向队列发出信号，表明我们的工作人员已完成其当前工作项。在 Queue 类内部，当我们从队列中获取项目时，计数器会加一以跟踪剩余未完成任务的数量。当我们调用 task_done 时，我们告诉队列我们已经完成了，并且它会将这个计数减一（当我们谈论 join 时，我们需要这样做的原因很快就会变得有意义）。
 
 在我们的主要协程函数中，我们创建一个可用产品列表并生成 10 个客户，每个客户都有随机产品。我们还为 checkout_customer 协程创建了三个工作任务，这些任务存储在一个名为收银员的列表中，类似于在我们想象中的超市工作的三个人类收银员。最后，我们等待收银员 checkout_customer 任务与 customer_queue.join() 协程一起使用收集完成。我们使用聚集，以便我们的收银员任务中的任何异常都会上升到我们的主要协程函数。加入协程阻塞，直到队列为空并且所有客户都已签出。当待处理工作项的内部计数器达到零时，该队列被认为是空的。因此，在你的工作人员中调用 task_done 很重要。如果你不这样做，join 协程可能会收到错误的队列视图，并且可能永远不会终止。
 
 虽然客户的商品是随机生成的，但你应该会看到类似于以下内容的输出，表明每个工作任务（收银员）正在同时从队列中签出客户：
 
-```
+```sh
 Cashier 0 checking out customer 0
 Cashier 0 checking out customer 0's sausage
 Cashier 1 checking out customer 1
@@ -174,27 +180,34 @@ class Customer:
 async def checkout_customer(queue: Queue, cashier_number: int):
     while True:
         customer: Customer = await queue.get()
-        print(f'Cashier {cashier_number} '
-              f'checking out customer '
-              f'{customer.customer_id}')
+        print(
+            f'Cashier {cashier_number} '
+            f'checking out customer '
+            f'{customer.customer_id}'
+        )
         for product in customer.products:
-            print(f"Cashier {cashier_number} "
-                  f"checking out customer "
-                  f"{customer.customer_id}'s {product.name}")
+            print(
+                f"Cashier {cashier_number} "
+                f"checking out customer "
+                f"{customer.customer_id}'s {product.name}"
+            )
             await asyncio.sleep(product.checkout_time)
-        print(f'Cashier {cashier_number} '
-              f'finished checking out customer '
-              f'{customer.customer_id}')
+        print(
+            f'Cashier {cashier_number} '
+            f'finished checking out customer '
+            f'{customer.customer_id}'
+        )
         queue.task_done()
  
  
 def generate_customer(customer_id: int) -> Customer:    ❶
-    all_products = [Product('beer', 2),
-                    Product('bananas', .5),
-                    Product('sausage', .2),
-                    Product('diapers', .2)]
-    products = [all_products[randrange(len(all_products))]
-                for _ in range(randrange(10))]
+    all_products = [
+        Product('beer', 2),
+        Product('bananas', .5),
+        Product('sausage', .2),
+        Product('diapers', .2)
+    ]
+    products = [all_products[randrange(len(all_products))] for _ in range(randrange(10))]
     return Customer(customer_id, products)
  
  
@@ -202,9 +215,7 @@ async def customer_generator(queue: Queue):             ❷
     customer_count = 0
  
     while True:
-        customers = [generate_customer(i)
-                     for i in range(customer_count,
-                     customer_count + randrange(5))]
+        customers = [generate_customer(i) for i in range(customer_count, customer_count + randrange(5))]
         for customer in customers:
             print('Waiting to put customer in line...')
             await queue.put(customer)
@@ -218,8 +229,7 @@ async def main():
  
     customer_producer = asyncio.create_task(customer_generator(customer_queue))
  
-    cashiers = [asyncio.create_task(checkout_customer(customer_queue, i))
-                for i in range(3)]
+    cashiers = [asyncio.create_task(checkout_customer(customer_queue, i)) for i in range(3)]
  
     await asyncio.gather(customer_producer, *cashiers)
  
@@ -235,7 +245,7 @@ asyncio.run(main())
 
 此代码随机生成客户，但在某些时候，队列应该填满，使得收银员处理客户的速度不如生产者创建客户的速度。因此，我们将看到类似于以下内容的输出，其中生产者等待将客户添加到行中，直到客户完成结帐：
 
-```python
+```sh
 Waiting to put customer in line...
 Cashier 1 checking out customer 7's sausage
 Cashier 1 checking out customer 7's diapers
@@ -298,8 +308,7 @@ async def create_order_queue(app: Application):                    ❸
     print('Creating order queue and tasks.')
     queue: Queue = asyncio.Queue(10)
     app[QUEUE_KEY] = queue
-    app[TASKS_KEY] = [asyncio.create_task(process_order_worker(i, queue))
-                      for i in range(5)]
+    app[TASKS_KEY] = [asyncio.create_task(process_order_worker(i, queue)) for i in range(5)]
  
  
 async def destroy_queue(app: Application):                         ❹
@@ -331,7 +340,7 @@ web.run_app(app)
 
 销毁队列有点复杂。我们首先使用 Queue.join 等待队列完成对其所有元素的处理。由于我们的应用程序正在关闭，它将不再提供任何 HTTP 请求，因此没有其他订单可以进入我们的队列。这意味着任何已经在队列中的东西都将由一个工作人员处理，并且工作人员当前正在处理的任何事情也将完成。我们还将 join 包裹在 wait_ for 中，超时时间也为 10 秒。这是一个好主意，因为我们不希望一个失控的任务花费很长时间来阻止我们的应用程序关闭。
 
-最后，我们定义我们的应用程序路线。我们在 /order 创建一个 POST 端点。该端点创建一个随机延迟并将其添加到队列中。将订单添加到队列后，我们会使用 HTTP 200 状态代码和一条短消息来响应用户。请注意，我们使用了 put 的协程变体，这意味着如果我们的队列已满，则请求将阻塞，直到消息在队列中，这可能需要一些时间。你可能希望使用 put_nowait 变体，然后以 HTTP 500 错误或其他错误代码进行响应，要求调用者稍后再试。在这里，我们对可能需要一些时间的请求进行了权衡，以便我们的订单始终排在队列中。你的应用程序可能需要“快速失败”行为，因此当队列已满时响应错误可能是你的用例的正确行为。
+最后，我们定义我们的应用程序路线。我们在 /order 创建一个 POST 端点。该端点创建一个随机延迟并将其添加到队列中。将订单添加到队列后，我们会使用 HTTP 200 状态代码和一条短消息来响应用户。请注意，我们使用了 put 的协程变体，这意味着如果我们的队列已满，则请求将阻塞，直到消息在队列中，这可能需要一些时间。你可能希望使用 put_nowait 变体，然后以 HTTP 500 错误或其他错误代码进行响应，要求调用者稍后再试。在这里，我们对可能需要一些时间的请求进行了权衡，以便我们的订单始终排在队列中。你的应用程序可能需要"快速失败"行为，因此当队列已满时响应错误可能是你的用例的正确行为。
 
 使用此队列，只要队列未满，我们的订单端点将在下订单时几乎立即响应。这为最终用户提供了快速流畅的订购体验——希望能让他们回头购买更多商品。
 
@@ -347,11 +356,11 @@ web.run_app(app)
 
 让我们构建一个执行此操作的爬虫。我们将创建一个无界队列（如果你担心内存溢出，你可能希望对其进行绑定）来保存 URL 以供下载。然后，我们的工作人员将从队列中提取 URL 并使用 aiohttp 下载它们。下载它们后，我们将使用流行的 HTML 解析器 Beautiful Soup 来提取链接以放回队列中。
 
-至少对于这个应用程序，我们不想扫描整个互联网，所以我们只会扫描远离根页面的一组页面。我们称之为“最大深度”；如果我们的最大深度设置为三，这意味着我们只会跟随距离根目录三页的链接。
+至少对于这个应用程序，我们不想扫描整个互联网，所以我们只会扫描远离根页面的一组页面。我们称之为"最大深度"；如果我们的最大深度设置为三，这意味着我们只会跟随距离根目录三页的链接。
 
 首先，让我们使用以下命令安装 Beautiful Soup 4.9.3 版：
 
-```
+```sh
 pip install -Iv beautifulsoup4==4.9.3
 ```
 
@@ -390,15 +399,13 @@ async def process_page(work_item: WorkItem, queue: Queue, session: ClientSession
     try:
         response = await asyncio.wait_for(session.get(work_item.url), timeout=3)
         if work_item.item_depth == max_depth:
-            print(f'Max depth reached, '
-                  f'for {work_item.url}')
+            print(f'Max depth reached, for {work_item.url}')
         else:
             body = await response.text()
             soup = BeautifulSoup(body, 'html.parser')
             links = soup.find_all('a', href=True)
             for link in links:
-                queue.put_nowait(WorkItem(work_item.item_depth + 1,
-                                          link['href']))
+                queue.put_nowait(WorkItem(work_item.item_depth + 1, link['href']))
     except Exception as e:
         logging.exception(f'Error processing url {work_item.url}')
  
@@ -408,8 +415,7 @@ async def main():                                                               
     url_queue = Queue()
     url_queue.put_nowait(WorkItem(0, start_url))
     async with aiohttp.ClientSession() as session:
-        workers = [asyncio.create_task(worker(i, url_queue, session, 3))
-                   for i in range(100)]
+        workers = [asyncio.create_task(worker(i, url_queue, session, 3)) for i in range(100)]
         await url_queue.join()
         [w.cancel() for w in workers]
  
@@ -479,9 +485,11 @@ async def worker(queue: Queue):
 async def main():
     priority_queue = PriorityQueue()
  
-    work_items = [(3, 'Lowest priority'),
-                  (2, 'Medium priority'),
-                  (1, 'High priority')]
+    work_items = [
+        (3, 'Lowest priority'),
+        (2, 'Medium priority'),
+        (1, 'High priority')
+    ]
  
     worker_task = asyncio.create_task(worker(priority_queue))
  
@@ -528,9 +536,11 @@ async def worker(queue: Queue):
 async def main():
     priority_queue = PriorityQueue()
  
-    work_items = [WorkItem(3, 'Lowest priority'),
-                  WorkItem(2, 'Medium priority'),
-                  WorkItem(1, 'High priority')]
+    work_items = [
+        WorkItem(3, 'Lowest priority'),
+        WorkItem(2, 'Medium priority'),
+        WorkItem(1, 'High priority')
+    ]
  
     worker_task = asyncio.create_task(worker(priority_queue))
  
@@ -551,7 +561,7 @@ Processing work item WorkItem(priority=2, data='Medium priority')
 Processing work item WorkItem(priority=3, data='Lowest priority')
 ```
 
-现在我们了解了优先级队列的基础知识，让我们将其转换回我们的订单管理 API 的早期示例。想象一下，我们有一些“超级用户”客户在我们的电子商务网站上花了很多钱。我们希望确保他们的订单始终首先得到处理，以确保为他们提供最佳体验。让我们修改前面的示例，为这些用户使用优先级队列。
+现在我们了解了优先级队列的基础知识，让我们将其转换回我们的订单管理 API 的早期示例。想象一下，我们有一些"超级用户"客户在我们的电子商务网站上花了很多钱。我们希望确保他们的订单始终首先得到处理，以确保为他们提供最佳体验。让我们修改前面的示例，为这些用户使用优先级队列。
 
 清单 12.7 Web 应用程序中的优先级队列
 
@@ -607,8 +617,7 @@ async def create_order_queue(app: Application):
     print('Creating order queue and tasks.')
     queue: Queue = asyncio.PriorityQueue(10)
     app[QUEUE_KEY] = queue
-    app[TASKS_KEY] = [asyncio.create_task(process_order_worker(i, queue))
-                      for i in range(5)]
+    app[TASKS_KEY] = [asyncio.create_task(process_order_worker(i, queue)) for i in range(5)]
  
  
 async def destroy_queue(app: Application):
@@ -632,7 +641,7 @@ web.run_app(app)
 
 ❶ 一个订单类，代表我们的工作项目，根据用户类型具有优先级。
 ❷ 将请求解析为订单。
-前面的清单看起来非常类似于我们与慢速订单管理系统交互的初始 API，不同之处在于我们使用优先级队列并创建一个 Order 类来表示传入的订单。当我们收到一个传入订单时，我们现在希望它有一个有效负载，其中“超级用户”标志设置为对 VIP 用户设置为 True，对其他用户设置为 False。我们可以像这样用 cURL 命中这个端点
+前面的清单看起来非常类似于我们与慢速订单管理系统交互的初始 API，不同之处在于我们使用优先级队列并创建一个 Order 类来表示传入的订单。当我们收到一个传入订单时，我们现在希望它有一个有效负载，其中"超级用户"标志设置为对 VIP 用户设置为 True，对其他用户设置为 False。我们可以像这样用 cURL 命中这个端点
 
 ```sh
 curl -X POST -d '{"power_user":"False"}' localhost:8080/order
@@ -665,11 +674,13 @@ async def worker(queue: Queue):
 async def main():
     priority_queue = PriorityQueue()
  
-    work_items = [WorkItem(3, 'Lowest priority'),
-                  WorkItem(3, 'Lowest priority second'),
-                  WorkItem(3, 'Lowest priority third'),
-                  WorkItem(2, 'Medium priority'),
-                  WorkItem(1, 'High priority')]
+    work_items = [
+        WorkItem(3, 'Lowest priority'),
+        WorkItem(3, 'Lowest priority second'),
+        WorkItem(3, 'Lowest priority third'),
+        WorkItem(2, 'Medium priority'),
+        WorkItem(1, 'High priority')
+    ]
  
     worker_task = asyncio.create_task(worker(priority_queue))
  
@@ -719,11 +730,13 @@ async def worker(queue: Queue):
 async def main():
     priority_queue = PriorityQueue()
  
-    work_items = [WorkItem(3, 1, 'Lowest priority'),
-                  WorkItem(3, 2, 'Lowest priority second'),
-                  WorkItem(3, 3, 'Lowest priority third'),
-                  WorkItem(2, 4, 'Medium priority'),
-                  WorkItem(1, 5, 'High priority')]
+    work_items = [
+        WorkItem(3, 1, 'Lowest priority'),
+        WorkItem(3, 2, 'Lowest priority second'),
+        WorkItem(3, 3, 'Lowest priority third'),
+        WorkItem(2, 4, 'Medium priority'),
+        WorkItem(1, 5, 'High priority')
+    ]
  
     worker_task = asyncio.create_task(worker(priority_queue))
  
@@ -749,7 +762,7 @@ Processing work item WorkItem(priority=3, order=3, data='Lowest priority third')
 我们现在已经了解了如何以 FIFO 队列顺序和优先队列顺序处理工作项。如果我们想首先处理最近添加的工作项怎么办？接下来，让我们看看如何使用 LIFO 队列来执行此操作。
 
 ## 12.3 LIFO 队列
-LIFO 队列在计算机科学界更常被称为堆栈。我们可以把这些想象成一堆扑克筹码：当你下注时，你从筹码顶部取出筹码（或“弹出”它们），当你希望赢得手牌时，你将筹码放回筹码顶部（或“推”他们）。当我们希望我们的工作人员首先处理最近添加的项目时，这些很有用。
+LIFO 队列在计算机科学界更常被称为堆栈。我们可以把这些想象成一堆扑克筹码：当你下注时，你从筹码顶部取出筹码（或"弹出"它们），当你希望赢得手牌时，你将筹码放回筹码顶部（或"推"他们）。当我们希望我们的工作人员首先处理最近添加的项目时，这些很有用。
 
 我们只会构建一个简单的示例来演示工人处理元素的顺序。至于何时使用 LIFO 队列，这取决于你的应用程序需要处理队列中的项目的顺序。是否需要先处理队列中最近插入的项目？在这种情况下，你需要使用 LIFO 队列。
 
@@ -778,11 +791,13 @@ async def worker(queue: Queue):
 async def main():
     lifo_queue = LifoQueue()
  
-    work_items = [WorkItem(3, 1, 'Lowest priority first'),
-                  WorkItem(3, 2, 'Lowest priority second'),
-                  WorkItem(3, 3, 'Lowest priority third'),
-                  WorkItem(2, 4, 'Medium priority'),
-                  WorkItem(1, 5, 'High priority')]
+    work_items = [
+        WorkItem(3, 1, 'Lowest priority first'),
+        WorkItem(3, 2, 'Lowest priority second'),
+        WorkItem(3, 3, 'Lowest priority third'),
+        WorkItem(2, 4, 'Medium priority'),
+        WorkItem(1, 5, 'High priority')
+    ]
  
     worker_task = asyncio.create_task(worker(lifo_queue))
  
@@ -795,8 +810,8 @@ async def main():
 asyncio.run(main())
 ```
 
-❶ 从队列中获取一个项目，或者从堆栈中“弹出”它。
-❷ 将一个项目放入队列中，或将其“推”到堆栈上。
+❶ 从队列中获取一个项目，或者从堆栈中"弹出"它。
+❷ 将一个项目放入队列中，或将其"推"到堆栈上。
 在前面的清单中，我们创建了一个 LIFO 队列和一组工作项。然后我们将它们一个接一个地插入队列中，将它们拉出并处理它们。运行它，你将看到以下输出：
 
 ```sh

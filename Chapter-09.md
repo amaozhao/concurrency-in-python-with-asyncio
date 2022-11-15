@@ -17,7 +17,7 @@ Web 应用程序为我们今天在 Internet 上使用的大多数网站提供支
 ### 9.1.1 什么是 REST？
 REST 是代表性状态转移的缩写。它是现代 Web 应用程序开发中广泛使用的范例，尤其是与具有 React 和 Vue 等框架的单页应用程序结合使用时。 REST 为我们提供了一种独立于客户端技术的无状态、结构化方式来设计我们的 Web API。 REST API 应该能够与从手机到浏览器的任意数量的客户端进行互操作，并且只需要更改数据的客户端表示即可。
 
-REST 中的关键概念是资源。资源通常是可以用名词表示的任何东西。例如，客户、产品或帐户可以是 RESTful 资源。我们刚刚列出的资源引用了单个客户或产品。资源也可以是集合，例如，“客户”或“产品”具有我们可以通过一些唯一标识符访问的单例。单例也可能有子资源。客户可以有一个最喜欢的产品列表作为示例。让我们看一下几个 REST API 以更好地理解：
+REST 中的关键概念是资源。资源通常是可以用名词表示的任何东西。例如，客户、产品或帐户可以是 RESTful 资源。我们刚刚列出的资源引用了单个客户或产品。资源也可以是集合，例如，"客户"或"产品"具有我们可以通过一些唯一标识符访问的单例。单例也可能有子资源。客户可以有一个最喜欢的产品列表作为示例。让我们看一下几个 REST API 以更好地理解：
 
 ```
 customers
@@ -32,7 +32,7 @@ customers/{id}/favorites
 虽然正确了解 REST 的所有细节超出了本书的范围，但 REST 博士论文的创建者是了解这些概念的好地方。可在 http://mng.bz/1jAg 获得。
 
 ### 9.1.2 aiohttp 服务器基础
-让我们开始使用 aiohttp 创建一个简单的“hello world”风格的 API。我们将从创建一个简单的 GET 端点开始，它将为我们提供一些关于时间和日期的 JSON 格式的基本数据。我们将调用我们的端点 /time 并期望它返回月、日和当前时间。
+让我们开始使用 aiohttp 创建一个简单的"hello world"风格的 API。我们将从创建一个简单的 GET 端点开始，它将为我们提供一些关于时间和日期的 JSON 格式的基本数据。我们将调用我们的端点 /time 并期望它返回月、日和当前时间。
 
 aiohttp 在 web 模块中提供 web 服务器功能。一旦我们导入它，我们就可以使用 RouteTableDef 定义端点（在 aiohttp 中称为路由）。 RouteTableDef 提供了一个装饰器，让我们可以指定请求类型（GET、POST 等）和表示端点名称的字符串。然后，我们可以使用 RouteTableDef 装饰器来装饰在调用该端点时将执行的协程。在这些修饰的协程中，我们可以执行我们想要的任何应用程序逻辑，然后将数据返回给客户端。
 
@@ -70,7 +70,7 @@ web.run_app(app)
 ❶ 创建时间 GET 端点；当客户端调用此端点时，时间协程将运行。
 ❷ 获取结果字典，并将其转换为 JSON 响应。
 ❸ 创建 Web 应用程序，注册路由并运行应用程序。
-在前面的清单中，我们首先创建了一个时间端点。 @routes.get('/time') 指定当客户端针对 /time URI 执行 HTTP GET 请求时，将执行装饰协程。在我们的时间协程中，我们获取月、日和时间并将其存储在字典中。然后我们调用 web.json_response，它获取字典并将其序列化为 JSON 格式。它还配置我们发回的 HTTP 响应。特别是，它将状态代码设置为 200，将内容类型设置为“application/json”。
+在前面的清单中，我们首先创建了一个时间端点。 @routes.get('/time') 指定当客户端针对 /time URI 执行 HTTP GET 请求时，将执行装饰协程。在我们的时间协程中，我们获取月、日和时间并将其存储在字典中。然后我们调用 web.json_response，它获取字典并将其序列化为 JSON 格式。它还配置我们发回的 HTTP 响应。特别是，它将状态代码设置为 200，将内容类型设置为"application/json"。
 
 然后我们创建 Web 应用程序并启动它。首先，我们创建一个 Application 实例并调用 add_routes。这将注册我们使用 Web 应用程序创建的所有装饰器。然后我们调用 run_app，它会启动 Web 服务器。默认情况下，这会在 localhost 端口 8080 上启动 Web 服务器。
 
@@ -88,7 +88,7 @@ Server: Python/3.9 aiohttp/3.6.2
 
 这表明我们已经成功地使用 aiohttp 创建了我们的第一个端点！你可能从我们的代码清单中注意到的一件事是，我们的时间协程有一个名为 request 的参数。虽然我们不需要在这个例子中使用它，但它很快就会变得很重要。此数据结构包含有关客户端发送的 Web 请求的信息，例如正文、查询参数等。要查看请求中的标头，请在时间协程内的某处添加 print(request.headers)，你应该会看到类似以下内容：
 
-```
+```python
 <CIMultiDictProxy('Host': 'localhost:8080', 'User-Agent': 'curl/7.64.1', 'Accept': '*/*')>
 ```
 
@@ -143,13 +143,15 @@ DB_KEY = 'database'
  
 async def create_database_pool(app: Application):          ❶
     print('Creating database pool.')
-    pool: Pool = await asyncpg.create_pool(host='127.0.0.1',
-                                           port=5432,
-                                           user='postgres',
-                                           password='password',
-                                           database='products',
-                                           min_size=6,
-                                           max_size=6)
+    pool: Pool = await asyncpg.create_pool(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        password='password',
+        database='products',
+        min_size=6,
+        max_size=6
+    )
     app[DB_KEY] = pool
  
  
@@ -184,7 +186,7 @@ web.run_app(app)
 
 接下来，我们定义我们的品牌路线。我们首先从请求中获取数据库池并运行查询以获取数据库中的所有品牌。然后我们遍历每个品牌，将它们输入字典。这是因为 aiohttp 不知道如何序列化 asyncpg Record 实例。运行此应用程序时，你应该能够在浏览器中访问 localhost:8080/brands 并查看数据库中显示为 JSON 列表的所有品牌，为你提供如下内容：
 
-```
+```python
 [{"brand_id": 1, "brand_name": "his"}, {"brand_id": 2, "brand_name": "he"}, {"brand_id": 3, "brand_name": "at"}]
 ```
 
@@ -192,7 +194,7 @@ web.run_app(app)
 
 让我们从产品的 GET 端点开始。这个端点将接受一个整数 ID 参数，这意味着我们会调用 /products/1 来获取 ID 为 1 的产品。我们如何创建一个包含参数的路由？ aiohttp 允许我们通过将任何参数包裹在大括号中来参数化我们的路由，因此我们的产品路由将是 /products/{id}。当我们像这样进行参数化时，我们会在请求的 match_info 字典中看到一个条目。在这种情况下，用户传递给 id 参数的任何内容都将在 request.match_info['id'] 中作为字符串可用。
 
-由于我们可以为 ID 传递无效字符串，因此我们需要添加一些错误处理。客户也可能要求提供不存在的 ID，因此我们也需要适当地处理“未找到”的情况。对于这些错误情况，我们将返回 HTTP 400 状态代码以指示客户端发出了错误请求。对于产品不存在的情况，我们将返回 HTTP 404 状态码。为了表示这些错误情况，aiohttp 为每个 HTTP 状态代码提供了一组异常。在错误情况下，我们可以直接引发它们，客户端将收到相应的状态码。
+由于我们可以为 ID 传递无效字符串，因此我们需要添加一些错误处理。客户也可能要求提供不存在的 ID，因此我们也需要适当地处理"未找到"的情况。对于这些错误情况，我们将返回 HTTP 400 状态代码以指示客户端发出了错误请求。对于产品不存在的情况，我们将返回 HTTP 404 状态码。为了表示这些错误情况，aiohttp 为每个 HTTP 状态代码提供了一组异常。在错误情况下，我们可以直接引发它们，客户端将收到相应的状态码。
 
 清单 9.3 获取特定产品
 
@@ -215,8 +217,7 @@ async def get_product(request: Request) -> Response:
         str_id = request.match_info['id']                               ❶
         product_id = int(str_id)
        
-        query = \
-            """
+        query = """
             SELECT
             product_id,
             product_name,
@@ -238,13 +239,15 @@ async def get_product(request: Request) -> Response:
  
 async def create_database_pool(app: Application):
     print('Creating database pool.')
-    pool: Pool = await asyncpg.create_pool(host='127.0.0.1',
-                                           port=5432,
-                                           user='postgres',
-                                           password='password',
-                                           database='products',
-                                           min_size=6,
-                                           max_size=6)
+    pool: Pool = await asyncpg.create_pool(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        password='password',
+        database='products',
+        min_size=6,
+        max_size=6
+    )
     app[DB_KEY] = pool
  
  
@@ -264,7 +267,7 @@ web.run_app(app)
 
 ❶ 从 URL 中获取 product_id 参数。
 ❷ 运行单个产品的查询。
-❸ 如果我们有结果，将其转换为 JSON 并发送给客户端；否则，发送“404 not found”。
+❸ 如果我们有结果，将其转换为 JSON 并发送给客户端；否则，发送"404 not found"。
 接下来，让我们看看如何创建 POST 端点以在数据库中创建新产品。我们将在请求正文中以 JSON 字符串的形式发送我们想要的数据，然后将其转换为插入查询。我们需要在这里做一些错误检查以查看 JSON 是否有效，如果不是，则向客户端发送一个错误的请求错误。
 
 清单 9.4 创建产品端点
@@ -293,12 +296,11 @@ async def create_product(request: Request) -> Response:
  
     if PRODUCT_NAME in body and BRAND_ID in body:
         db = request.app[DB_KEY]
-        await db.execute('''INSERT INTO product(product_id,
-                                                product_name,
-                                                brand_id)
-                                                VALUES(DEFAULT, $1, $2)''',
-                         body[PRODUCT_NAME],
-                         int(body[BRAND_ID]))
+        await db.execute(
+            '''INSERT INTO product(product_id, product_name, brand_id) VALUES(DEFAULT, $1, $2)''',
+            body[PRODUCT_NAME],
+            int(body[BRAND_ID])
+        )
         return web.Response(status=201)
     else:
         raise web.HTTPBadRequest()
@@ -316,7 +318,7 @@ web.run_app(app)
 
 使用 cURL，你应该能够执行类似以下的操作以将产品插入数据库，并获得 HTTP 201 响应。
 
-```
+```bash
 curl -i -d '{"product_name":"product_name", "brand_id":1}' localhost:8080/product
 HTTP/1.1 201 Created
 Content-Length: 0
@@ -334,7 +336,7 @@ Server: Python/3.9 aiohttp/3.6.2
 
 为了测试这一点，让我们为我们的品牌端点构建一个 Flask 替代品。我们假设你基本熟悉 Flask 和同步数据库驱动程序，尽管即使你不知道这些，你也应该能够遵循代码。首先，我们将使用以下命令安装 Flask 和 psycopg2，这是一个同步 Postgres 驱动程序：
 
-```
+```sh
 pip install -Iv flask==2.0.1
 pip install -Iv psycopg2==2.9.1
 ```
@@ -364,13 +366,13 @@ def brands():
 
 现在，我们需要运行我们的应用程序。 Flask 带有一个开发服务器，但它不是生产就绪的，也不是一个公平的比较，特别是因为它只能运行一个进程，这意味着我们一次只能处理一个请求。我们需要使用生产 WSGI 服务器来测试它。我们将在此示例中使用 Gunicorn，尽管你可以选择很多。让我们从使用以下命令安装 Gunicorn 开始：
 
-```
+```sh
 pip install -Iv gunicorn==20.1.0
 ```
 
 我们将在 8 核机器上对此进行测试，因此我们将使用 Gunicorn 生成 8 个工人。运行 gunicorn -w 8 chapter_09.listing_9_5:app，你应该会看到 8 个 worker 启动：
 
-```
+```shell
 [2020-11-24 09:53:39 -0500] [16454] [INFO] Starting gunicorn 20.0.4
 [2020-11-24 09:53:39 -0500] [16454] [INFO] Listening at: http:/ /127.0.0.1:8000 (16454)
 [2020-11-24 09:53:39 -0500] [16454] [INFO] Using worker: sync
@@ -388,7 +390,7 @@ pip install -Iv gunicorn==20.1.0
 
 让我们首先在 Flask 服务器上运行 30 秒的负载测试。我们将使用一个线程和 200 个连接，模拟 200 个并发用户尽可能快地访问我们的应用程序。在 8 核 2.4 Ghz 机器上，你可以看到类似于以下的结果：
 
-```
+```sh
 Running 30s test @ http:/ /localhost:8000/brands
   1 threads and 200 connections
   16534 requests in 30.02s, 61.32MB read
@@ -399,7 +401,7 @@ Transfer/sec:    2.04MB
 
 我们每秒处理大约 550 个请求——结果还不错。让我们用 aiohttp 重新运行它并比较结果：
 
-```
+```sh
 Running 30s test @ http:/ /localhost:8080/brands
   1 threads and 200 connections
   46774 requests in 30.01s, 191.45MB read
@@ -445,17 +447,17 @@ ASGI 应用程序函数具有三个参数：作用域字典、接收协程和发
 
 现在，我们如何为上述应用程序提供服务？有一些可用的 ASGI 实现，但我们将使用一种流行的称为 Uvicorn (https://www.uvicorn.org/) 的实现。 Uvicorn 建立在 uvloop 和 httptools 之上，它们是 asyncio 事件循环的快速 C 实现（我们实际上并不依赖于 asyncio 附带的事件循环，我们将在第 14 章了解更多信息）和 HTTP 解析。我们可以通过运行以下命令来安装 Uvicorn：
 
-```python
+```sh
 pip install -Iv uvicorn==0.14.0
 ```
 
 现在，我们可以使用以下命令运行我们的应用程序：
 
-```python
+```sh
 uvicorn chapter_09.listing_9_7:application
 ```
 
-如果我们访问 http://localhost:8000，我们应该会看到打印出的“hello”消息。虽然我们在这里直接使用 Uvicorn 进行测试，但最好将 Uvicorn 与 Gunicorn 一起使用，因为 Gunicorn 将有逻辑为我们在崩溃时重启工作人员。我们将在 9.4 节中看到如何用 Django 做到这一点。
+如果我们访问 http://localhost:8000，我们应该会看到打印出的"hello"消息。虽然我们在这里直接使用 Uvicorn 进行测试，但最好将 Uvicorn 与 Gunicorn 一起使用，因为 Gunicorn 将有逻辑为我们在崩溃时重启工作人员。我们将在 9.4 节中看到如何用 Django 做到这一点。
 
 我们应该记住，虽然 WSGI 是公认的 PEP，但 ASGI 尚未被接受，并且在撰写本文时它仍然相对较新。期待 ASGI 如何随着异步环境的变化而发展和变化的细节。
 
@@ -464,7 +466,7 @@ uvicorn chapter_09.listing_9_7:application
 ## 9.3 ASGI 与 Starlette
 Starlette 是一个小型的 ASGI 兼容框架，由 Uvicorn 和其他流行库（如 Django REST 框架）的创建者 Encode 创建。它提供了相当令人印象深刻的性能（在撰写本文时）、WebSocket 支持等等。你可以在 https://www.starlette.io/ 查看其文档。让我们看看如何使用它来实现简单的 REST 和 WebSocket 端点。首先，让我们先使用以下命令安装它：
 
-```python
+```sh
 pip install -Iv starlette==0.15.0
 ```
 
@@ -485,13 +487,15 @@ from typing import List, Dict
  
  
 async def create_database_pool():
-    pool: Pool = await asyncpg.create_pool(host='127.0.0.1',
-                                           port=5432,
-                                           user='postgres',
-                                           password='password',
-                                           database='products',
-                                           min_size=6,
-                                           max_size=6)
+    pool: Pool = await asyncpg.create_pool(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        password='password',
+        database='products',
+        min_size=6,
+        max_size=6
+    )
     app.state.DB = pool
  
  
@@ -508,20 +512,22 @@ async def brands(request: Request) -> Response:
     return JSONResponse(result_as_dict)
  
  
-app = Starlette(routes=[Route('/brands', brands)],
-                on_startup=[create_database_pool],
-                on_shutdown=[destroy_database_pool])
+app = Starlette(
+    routes=[Route('/brands', brands)],
+    on_startup=[create_database_pool],
+    on_shutdown=[destroy_database_pool]
+)
 ```
 
 现在我们有了品牌端点，让我们使用 Uvicorn 来启动它。和之前一样，我们将使用以下命令启动 8 个 worker：
 
-```
+```sh
 uvicorn --workers 8 --log-level error chapter_09.listing_9_8:app
 ```
 
 你应该能够像以前一样在 localhost:8000/brands 访问此端点并查看品牌表的内容。现在我们已经运行了我们的应用程序，让我们运行一个快速基准测试来看看它与 aiohttp 和 Flask 的比较。我们将使用与之前相同的 wrk 命令，在 30 秒内有 200 个连接：
 
-```
+```sh
 Running 30s test @ http:/ /localhost:8000/brands
   1 threads and 200 connections
 Requests/sec:   4365.37
@@ -533,7 +539,7 @@ Transfer/sec:   16.07MB
 ### 9.3.2 带有 Starlette 的 WebSockets
 在传统的 HTTP 请求中，客户端向服务器发送一个请求，服务器返回一个响应，这就是事务的结束。如果我们想构建一个无需用户刷新即可更新的网页怎么办？例如，我们可能有一个实时计数器来显示网站上当前有多少用户。我们可以通过 HTTP 使用一些轮询端点的 JavaScript 来执行此操作，告诉我们网站上有多少用户。我们可以每隔几秒点击一次端点，用最新的结果更新页面。
 
-虽然这会起作用，但它也有缺点。主要缺点是我们在 Web 服务器上创建了额外的负载，每个请求和响应周期都需要时间和资源。这尤其令人震惊，因为我们的用户数可能不会在请求之间发生变化，从而导致我们的系统因没有新信息而承受压力（我们可以通过缓存来缓解这种情况，但重点仍然存在，并且缓存引入了其他复杂性和开销）。 HTTP 轮询相当于汽车后座上的孩子反复询问“我们到了吗？”
+虽然这会起作用，但它也有缺点。主要缺点是我们在 Web 服务器上创建了额外的负载，每个请求和响应周期都需要时间和资源。这尤其令人震惊，因为我们的用户数可能不会在请求之间发生变化，从而导致我们的系统因没有新信息而承受压力（我们可以通过缓存来缓解这种情况，但重点仍然存在，并且缓存引入了其他复杂性和开销）。 HTTP 轮询相当于汽车后座上的孩子反复询问"我们到了吗？"
 
 WebSockets 提供了 HTTP 轮询的替代方案。我们建立了一个持久套接字，而不是像 HTTP 那样的请求/响应循环。然后，我们只是通过该套接字自由发送数据。这个套接字是双向的，这意味着我们既可以向服务器发送数据也可以从服务器接收数据，而不必每次都经历 HTTP 请求生命周期。将此应用于显示最新用户计数的示例，一旦我们连接到 WebSocket，服务器就可以告诉我们何时有新的用户计数。如图 9.1 所示，我们不需要重复询问、创建额外的负载并可能接收到不新鲜的数据。
 
@@ -543,7 +549,7 @@ WebSockets 提供了 HTTP 轮询的替代方案。我们建立了一个持久套
 
 Starlette 使用易于理解的界面为 WebSockets 提供开箱即用的支持。为了看到这一点，我们将构建一个简单的 WebSocket 端点，它会告诉我们有多少用户同时连接到一个 WebSocket 端点。要开始，我们首先需要安装 WebSocket 支持：
 
-```
+```sh
 pip install -Iv websockets==9.1
 ```
 
@@ -638,19 +644,19 @@ Django 是最流行和广泛使用的 Python 框架之一。它具有丰富的�
 
 让我们开始确保我们安装了适当版本的 Django：
 
-```
+```sh
 pip install -Iv django==3.2.8
 ```
 
 现在，让我们使用 Django 管理工具为我们的应用程序创建骨架。我们将调用我们的项目 async_views：
 
-```
+```sh
 django-admin startproject async_views
 ```
 
 运行此命令后，你应该会看到使用以下结构创建的名为 async_views 的目录：
 
-```
+```sh
 async_views/
     manage.py
     async_views/
@@ -663,7 +669,7 @@ async_views/
 
 请注意，我们有一个 wsgi.py 和一个 asgi.py 文件，这表明我们可以部署到这两种类型的网关接口。你现在应该能够使用 Uvicorn 来提供基本的 Django hello world 页面。从顶级 async_views 目录运行以下命令：
 
-```
+```sh
 gunicorn async_views.asgi:application -k uvicorn.workers.UvicornWorker
 ```
 
@@ -692,9 +698,11 @@ async def get_url_details(session: ClientSession, url: str):
     response = await session.get(url)
     response_body = await response.text()
     end_time = datetime.now()
-    return {'status': response.status,
-            'time': (end_time - start_time).microseconds,
-            'body_length': len(response_body)}
+    return {
+        'status': response.status,
+        'time': (end_time - start_time).microseconds,
+        'body_length': len(response_body)
+    }
  
  
 async def make_requests(url: str, request_num: int):
@@ -774,7 +782,7 @@ urlpatterns = [
 
 现在，我们需要在 Django 应用程序中包含 async_api 应用程序的 URL。在 async_views/async_views 目录中，你应该已经有一个 urls.py 文件。在此文件中，你需要修改 urlpatterns 列表以引用 async_api，完成后应如下所示：
 
-```
+```python
 from django.contrib import admin
 from django.urls import path, include
 urlpatterns = [
@@ -785,7 +793,7 @@ urlpatterns = [
 
 最后，我们需要将 async_views 应用程序添加到已安装的应用程序中。在 async_views/async_views/settings.py 中，修改 INSTALLED_APPS 列表以包含 async_api；一旦完成，它应该如下所示：
 
-```
+```python
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -800,7 +808,7 @@ INSTALLED_APPS = [
 现在，我们终于拥有了运行应用程序所需的一切。你可以使用我们第一次创建 Django 应用程序时使用的相同 gunicorn 命令启动应用程序。现在，你可以访问我们的端点并发出请求。例如，要同时访问 example.com 10 次并获取结果，请转到：
 
 ```
-http:/ /localhost:8000/requests/?url=http:/ / example .com&request_num=10
+http:/ /localhost:8000/requests/?url=http://example.com&request_num=10
 ```
 
 虽然你的机器上的数字会有所不同，但你应该会看到如图 9.3 所示的页面。
@@ -811,7 +819,7 @@ http:/ /localhost:8000/requests/?url=http:/ / example .com&request_num=10
 
 我们现在已经构建了一个 Django 视图，它可以通过使用 ASGI 托管它来同时发出任意数量的 HTTP 请求，但是如果你处于无法选择 ASGI 的情况怎么办？也许你正在使用依赖它的旧应用程序；你还能托管异步视图吗？我们可以通过使用 wsgi.py 中的 WSGI 应用程序在 Gunicorn 下运行我们的应用程序来尝试这一点，并使用以下命令使用同步工作者：
 
-```
+```sh
 gunicorn async_views.wsgi:application
 ```
 
@@ -831,7 +839,7 @@ id 函数将返回一个整数，该整数保证在对象的生命周期内是�
 
 在第 7 章中，我们看到我们可以在线程池执行器中运行同步 API，并取回我们可以与 asyncio 一起使用的等待对象。 sync_to_async 函数本质上是这样做的，但有一些值得注意的警告。
 
-第一个警告是 sync_to_async 具有线程敏感性的概念。在许多情况下，具有共享状态的同步 API 并非设计为从多个线程调用，这样做可能会导致竞争条件。为了解决这个问题，sync_to_async 默认为“线程敏感”模式（具体来说，此函数有一个默认为 True 的 thread_sensitive 标志）。这使得我们传入的任何同步代码都在 Django 的主线程中运行。这意味着我们在这里所做的任何阻塞都会阻塞整个 Django 应用程序（好吧，如果我们正在运行多个，则至少有一个 WSGI/ASGI 工作程序），从而使我们失去异步堆栈的一些好处。
+第一个警告是 sync_to_async 具有线程敏感性的概念。在许多情况下，具有共享状态的同步 API 并非设计为从多个线程调用，这样做可能会导致竞争条件。为了解决这个问题，sync_to_async 默认为"线程敏感"模式（具体来说，此函数有一个默认为 True 的 thread_sensitive 标志）。这使得我们传入的任何同步代码都在 Django 的主线程中运行。这意味着我们在这里所做的任何阻塞都会阻塞整个 Django 应用程序（好吧，如果我们正在运行多个，则至少有一个 WSGI/ASGI 工作程序），从而使我们失去异步堆栈的一些好处。
 
 如果我们处于线程敏感性不是问题的情况下（换句话说，当没有共享状态，或者共享状态不依赖于特定线程时），我们可以将 thread_sensitive 更改为 False。这将使每次调用都在一个新线程中运行，给我们一些不会阻塞 Django 主线程的东西，并保留异步堆栈的更多好处。
 
@@ -874,7 +882,7 @@ http://127.0.0.1:8000/requests/sync_to_async?sleep_time=5&num_calls=5&thread_sen
 你会注意到，这只需 5 秒即可完成，因为我们正在运行多个线程。你还会注意到，如果你多次点击此 URL，每个请求仍然只需要 5 秒，这表明请求没有相互阻塞。现在，让我们将 thread_sensitive url 参数更改为 True，你会看到完全不同的行为。首先，视图需要 25 秒才能返回，因为它按顺序进行了 5 次 5 秒调用。其次，如果你多次点击 URL，每个都会阻塞直到另一个完成，因为我们阻塞了 Django 的主线程。 sync_to_async 函数为我们提供了多种使用现有代码和异步视图的选项，但你需要了解正在运行的程序的线程敏感性，以及这可能对异步性能优势造成的限制。
 
 ### 9.4.2 在同步视图中使用异步代码
-下一个合乎逻辑的问题是，“如果我有一个同步视图，但我想使用异步库怎么办？” ASGI 规范还有一个名为 async_to_sync 的特殊函数。该函数接受协程并在事件循环中运行它，以同步方式返回结果。如果没有事件循环（如 WSGI 应用程序中的情况），则会在每次请求时为我们创建一个新的；否则，这将在当前事件循环中运行（就像我们作为 ASGI 应用程序运行时的情况一样）。为了尝试这个，让我们创建一个新版本的请求端点作为同步视图，同时仍然使用我们的异步请求功能。
+下一个合乎逻辑的问题是，"如果我有一个同步视图，但我想使用异步库怎么办？" ASGI 规范还有一个名为 async_to_sync 的特殊函数。该函数接受协程并在事件循环中运行它，以同步方式返回结果。如果没有事件循环（如 WSGI 应用程序中的情况），则会在每次请求时为我们创建一个新的；否则，这将在当前事件循环中运行（就像我们作为 ASGI 应用程序运行时的情况一样）。为了尝试这个，让我们创建一个新版本的请求端点作为同步视图，同时仍然使用我们的异步请求功能。
 
 清单 9.15 在同步视图中调用异步代码
 

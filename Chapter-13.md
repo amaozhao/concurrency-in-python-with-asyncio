@@ -111,9 +111,7 @@ async def write_output(prefix: str, stdout: StreamReader):
  
 async def main():
     program = ['ls', '-la']
-    process: Process = await asyncio.create_subprocess_exec(*program,
-                                                            stdout=asyncio
-                                                            .subprocess.PIPE)
+    process: Process = await asyncio.create_subprocess_exec(*program, stdout=asyncio.subprocess.PIPE)
     print(f'Process pid is: {process.pid}')
     stdout_task = asyncio.create_task(write_output(' '.join(program), process.stdout))
  
@@ -158,9 +156,7 @@ from asyncio.subprocess import Process
  
 async def main():
     program = ['python3', 'listing_13_4.py']
-    process: Process = await asyncio.create_subprocess_exec(*program,
-                                                            stdout=asyncio
-                                                            .subprocess.PIPE)
+    process: Process = await asyncio.create_subprocess_exec(*program, stdout=asyncio.subprocess.PIPE)
     print(f'Process pid is: {process.pid}')
  
     return_code = await process.wait()
@@ -187,9 +183,7 @@ from asyncio.subprocess import Process
  
 async def main():
     program = ['python3', 'listing_13_4.py']
-    process: Process = await asyncio.create_subprocess_exec(*program,
-                                                            stdout=asyncio
-                                                            .subprocess.PIPE)
+    process: Process = await asyncio.create_subprocess_exec(*program, stdout=asyncio.subprocess.PIPE)
     print(f'Process pid is: {process.pid}')
  
     stdout, stderr = await process.communicate()
@@ -208,7 +202,7 @@ asyncio.run(main())
 ### 13.1.2 并发运行子进程
 现在我们已经了解了创建、终止和读取子流程输出的基础知识，现在我们将添加现有知识以同时运行多个应用程序。假设我们需要加密内存中的多段文本，出于安全目的，我们希望使用 Twofish 密码算法。 hashlib 模块不支持此算法，因此我们需要一个替代方案。我们可以使用 gpg（GNU Privacy Guard 的缩写，它是 PGP [pretty good privacy] 的免费软件替代品）命令行应用程序。你可以在 https://gnupg.org/download/ 下载 gpg。
 
-首先，让我们定义要用于加密的命令。我们可以通过定义密码并使用命令行参数设置算法来使用 gpg。然后，就是将文本回显到应用程序的问题。例如，要加密文本“encrypt this!”，我们可以运行以下命令：
+首先，让我们定义要用于加密的命令。我们可以通过定义密码并使用命令行参数设置算法来使用 gpg。然后，就是将文本回显到应用程序的问题。例如，要加密文本"encrypt this!"，我们可以运行以下命令：
 
 ```sh
 echo 'encrypt this!' | gpg -c --batch --passphrase 3ncryptm3 --cipher-algo TWOFISH
@@ -239,11 +233,11 @@ async def encrypt(text: str) -> bytes:
     program = ['gpg', '-c', '--batch', '--passphrase', '3ncryptm3',
         '--cipher-algo', 'TWOFISH']
  
-    process: Process = await asyncio.create_subprocess_exec(*program,
-                                                            stdout=asyncio
-                                                            .subprocess.PIPE,
-                                                            stdin=asyncio
-                                                            .subprocess.PIPE)
+    process: Process = await asyncio.create_subprocess_exec(
+        *program,
+        stdout=asyncio.subprocess.PIPE,
+        stdin=asyncio.subprocess.PIPE
+    )
     stdout, stderr = await process.communicate(text.encode())
     return stdout
  
@@ -291,11 +285,11 @@ async def encrypt(sem: Semaphore, text: str) -> bytes:
     program = ['gpg', '-c', '--batch', '--passphrase', '3ncryptm3', '--cipher-algo', 'TWOFISH']
  
     async with sem:
-        process: Process = await asyncio.create_subprocess_exec(*program,
-                                                                stdout=asyncio
-                                                                .subprocess.PIPE,
-                                                                stdin=asyncio
-                                                                .subprocess.PIPE)
+        process: Process = await asyncio.create_subprocess_exec(
+            *program,
+            stdout=asyncio.subprocess.PIPE,
+            stdin=asyncio.subprocess.PIPE
+        )
         stdout, stderr = await process.communicate(text.encode())
         return stdout
  
@@ -341,11 +335,11 @@ from asyncio.subprocess import Process
  
 async def main():
     program = ['python3', 'listing_13_9.py']
-    process: Process = await asyncio.create_subprocess_exec(*program,
-                                                            stdout=asyncio
-                                                            .subprocess.PIPE,
-                                                            stdin=asyncio
-                                                            .subprocess.PIPE)
+    process: Process = await asyncio.create_subprocess_exec(
+        *program,
+        stdout=asyncio.subprocess.PIPE,
+        stdin=asyncio.subprocess.PIPE
+    )
  
     stdout, stderr = await process.communicate(b'Zoot')
     print(stdout)
@@ -387,11 +381,11 @@ async def consume_and_send(text_list, stdout: StreamReader, stdin: StreamWriter)
  
 async def main():
     program = ['python3', 'listing_13_11.py']
-    process: Process = await asyncio.create_subprocess_exec(*program,
-                                                            stdout=asyncio
-                                                            .subprocess.PIPE,
-                                                            stdin=asyncio
-                                                            .subprocess.PIPE)
+    process: Process = await asyncio.create_subprocess_exec(
+        *program,
+        stdout=asyncio.subprocess.PIPE,
+        stdin=asyncio.subprocess.PIPE
+    )
  
     text_input = ['one\n', 'two\n', 'three\n', 'four\n', 'quit\n']
  
@@ -401,7 +395,7 @@ async def main():
 asyncio.run(main())
 ```
 
-在前面的清单中，我们定义了一个 consume_and_send 协程，它读取标准输出，直到我们收到用户指定输入的预期消息。收到此消息后，我们将数据转储到我们自己的应用程序的标准输出，并将“text_list”中的字符串写入标准输入。我们重复这个，直到我们将所有数据发送到我们的子进程中。当我们运行它时，我们应该看到我们所有的输出都被发送到我们的子进程并正确地回显：
+在前面的清单中，我们定义了一个 consume_and_send 协程，它读取标准输出，直到我们收到用户指定输入的预期消息。收到此消息后，我们将数据转储到我们自己的应用程序的标准输出，并将"text_list"中的字符串写入标准输入。我们重复这个，直到我们将所有数据发送到我们的子进程中。当我们运行它时，我们应该看到我们所有的输出都被发送到我们的子进程并正确地回显：
 
 ```python
 b'Enter text to echo: '
@@ -454,20 +448,21 @@ async def input_writer(text_data, input_ready_event: Event, stdin: StreamWriter)
  
 async def main():
     program = ['python3', 'interactive_echo_random.py']
-    process: Process = await asyncio.create_subprocess_exec(*program,
-                                                            stdout=asyncio
-                                                            .subprocess.PIPE,
-                                                            stdin=asyncio
-                                                            .subprocess.PIPE)
+    process: Process = await asyncio.create_subprocess_exec(
+        *program,
+        stdout=asyncio.subprocess.PIPE,
+        stdin=asyncio.subprocess.PIPE
+    )
  
     input_ready_event = asyncio.Event()
  
     text_input = ['one\n', 'two\n', 'three\n', 'four\n', 'quit\n']
  
-    await asyncio.gather(output_consumer(input_ready_event, process.stdout),
-                         input_writer(text_input, input_ready_event,
-                         process.stdin),
-                         process.wait())
+    await asyncio.gather(
+        output_consumer(input_ready_event, process.stdout),
+        input_writer(text_input, input_ready_event, process.stdin),
+        process.wait()
+    )
  
  
 asyncio.run(main())
