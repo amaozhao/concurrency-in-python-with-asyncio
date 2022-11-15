@@ -9,7 +9,7 @@
 - 处理任务中的异常
 - 向异步应用程序添加自定义关闭逻辑
 
-在第 1 章和第 2 章中，我们介绍了协程、任务和事件循环。我们还研究了如何同时运行长时操作，并探索了一些促进此操作的 asyncio API。然而，到目前为止，我们只用 sleep 函数模拟了长时间的操作。
+在第 1 章和第 2 章中，我们介绍了协程、任务和事件循环。我们还研究了如何同时运行长时操作，并探索了一些促进此操作的 asyncio API。然而，到目前为止，我们只用 sleep 函数模拟了长时操作。
 
 由于我们想要构建的不仅仅是演示应用程序，我们将使用一些真实的阻塞操作来演示如何创建一个可以同时处理多个用户的服务器。我们将只使用一个线程来执行此操作，与涉及线程或多个进程的其他解决方案相比，这会产生更节省资源和更简单的应用程序。我们将利用我们所学到的关于协程、任务和异步 API 方法的知识来构建一个使用套接字的命令行回显服务器应用程序来演示这一点。在本章结束时，你将能够使用 asyncio 构建基于套接字的网络应用程序，该应用程序可以使用一个线程同时处理多个用户。
 
@@ -88,7 +88,7 @@ print(f'I got a connection from {client_address}!')
 ## 3.2 使用 Telnet 连接到服务器
 我们接受连接的简单示例使我们无法连接。有许多命令行应用程序可以从服务器读取数据和从服务器写入数据，但是已经存在很长时间的流行应用程序是 Telnet。
 
-Telnet 于 1969 年首次开发，是“电传网络”的缩写。 Telnet 与我们指定的服务器和主机建立 TCP 连接。一旦我们这样做了，就建立了一个终端，我们可以自由地发送和接收字节，所有这些都将显示在终端中。
+Telnet 于 1969 年首次开发，是“电传网络”的缩写。 Telnet 与我们指定的服务器和主机建立 TCP 连接。一旦成功就建立了一个终端，我们可以自由地发送和接收字节，所有这些都将显示在终端中。
 
 在 Mac OS 上，你可以使用命令 brew install telnet 使用 Homebrew 安装 telnet（请参阅 https://brew.sh/ 以安装 Homebrew）。在 Linux 发行版上，你需要使用系统包管理器进行安装（apt-get install telnet 或类似的）。在 Windows 上，PuTTy 是最佳选择，你可以从 https://putty.org 下载。
 
@@ -116,7 +116,7 @@ I got a connection from ('127.0.0.1', 56526)!
 ```
 
 
-当服务器代码退出时，你还会看到 Connection closed by foreign host 消息，表明服务器已关闭与我们客户端的连接。我们现在有一种方法可以连接到服务器并在其中写入和读取字节，但是我们的服务器本身不能读取或发送任何数据。我们可以使用客户端套接字的 sendall 和 recv 方法来做到这一点。
+当服务器代码退出时，你还会看到 Connection closed by foreign host 消息，表明服务器已关闭与客户端的连接。我们现在有一种方法可以连接到服务器并在其中写入和读取字节，但是我们的服务器本身不能读取或发送任何数据。我们可以使用客户端套接字的 sendall 和 recv 方法来做到这一点。
 
 ### 3.2.1 从套接字读取和写入数据
 现在我们已经创建了一个能够接受连接的服务器，让我们来看看如何从我们的连接中读取数据。套接字类有一个名为 recv 的方法，我们可以使用它从特定套接字获取数据。此方法采用一个整数，表示我们希望在给定时间读取的字节数。这很重要，因为我们不能一次从套接字读取所有数据；我们需要缓冲，直到我们到达输入的末尾。
@@ -187,7 +187,7 @@ connection.sendall(buffer)
 此应用程序现在一次处理一个客户端，但多个客户端可以连接到单个服务器套接字。让我们修改这个示例以允许多个客户端同时连接。在此过程中，我们将演示我们如何无法正确支持具有阻塞套接字的多个客户端。
 
 ### 3.2.2 允许多个连接和阻塞的危险
-侦听模式下的套接字允许同时进行多个客户端连接。这意味着我们可以重复调用 socket.accept，并且每次客户端连接时，我们都会获得一个新的连接套接字来读取和写入该客户端的数据。有了这些知识，我们可以直接调整前面的示例来处理多个客户端。我们永远循环，调用 socket.accept 来监听新的连接。每次我们得到一个，我们将它附加到我们到目前为止的连接列表中。然后，我们遍历每个连接，接收传入的数据并将该数据写回客户端连接。
+侦听模式下的套接字允许同时进行多个客户端连接。这意味着我们可以重复调用 socket.accept，并且每次客户端连接时，我们都会获得一个新的连接套接字来读取和写入该客户端的数据。有了这些知识，我们可以直接调整前面的示例来处理多个客户端。我们永远循环调用 socket.accept 来监听新的连接。每次我们得到一个连接，就将它附加到我们目前的连接列表中。然后，我们遍历每个连接，接收传入的数据并将该数据写回客户端连接。
 
 清单 3.3 允许多个客户端连接
 
@@ -226,7 +226,7 @@ finally:
     server_socket.close()
 ```
 
-我们可以通过使用 telnet 建立一个连接并输入一条消息来尝试此操作。然后，一旦如此，我们就可以连接第二个 telnet 客户端并发送另一条消息。但是，如果我们这样做，我们会立即注意到一个问题。我们的第一个客户端可以正常工作，并且会像我们预期的那样回显消息，但我们的第二个客户端不会得到任何回显。这是由于套接字的默认阻塞行为。方法 accept 和 recv 阻塞，直到它们接收到数据。这意味着一旦第一个客户端连接，我们将阻止等待它向我们发送它的第一个回显消息。这会导致其他客户端卡住等待循环的下一次迭代，直到第一个客户端向我们发送数据时才会发生这种情况（图 3.2）。
+我们可以通过使用 telnet 建立一个连接并输入一条消息来尝试此操作。然后，一旦成功，我们就可以连接第二个 telnet 客户端并发送另一条消息。但是，如果我们这样做，我们会立即注意到一个问题。我们的第一个客户端可以正常工作，并且会像我们预期的那样回显消息，但我们的第二个客户端不会得到任何回显。这是由于套接字的默认阻塞行为。方法 accept 和 recv 阻塞，直到它们接收到数据。这意味着一旦第一个客户端连接，我们将阻止等待它向我们发送它的第一个回显消息。这会导致其他客户端卡在等待循环的下一次迭代，直到第一个客户端向我们发送数据时才会发生这种情况（图 3.2）。
 
 ![](./images/3-2.png)
 
@@ -445,7 +445,7 @@ selector.register(new_sockets)
     ready = process_events(events)
 ```
 
-我们运行任何准备运行的协程，直到它们在 await 语句上暂停，并将它们存储在 paused 数组中。我们还跟踪运行这些协程时需要观察的任何新套接字，并将它们注册到selector中。然后，我们计算调用 select 时所需的超时时间。虽然这个超时计算有点复杂，但它通常会查看我们计划在特定时间或特定持续时间运行的事情。 asyncio.sleep 就是一个例子。然后我们调用 select 并等待任何套接字事件或超时。一旦其中任何一个发生，我们就会处理这些事件并将其转换为准备运行的协程列表。
+我们运行任何准备运行的协程，直到它们在 await 语句上暂停，并将它们存储在 paused 数组中。我们还跟踪运行这些协程时需要观察的任何新套接字，并将它们注册到selector中。然后，我们计算调用 select 时所需的超时时间。虽然这个超时计算有点复杂，但它通常会查看我们计划在特定时间或特定持续时间运行的事件。 asyncio.sleep 就是一个例子。然后我们调用 select 并等待任何套接字事件或超时。一旦其中任何一个发生，我们就会处理这些事件并将其转换为准备运行的协程列表。
 
 虽然我们构建的事件循环仅用于套接字事件，但它展示了使用selector注册我们关心的套接字的主要概念，只有在我们想要处理的事情发生时才会被唤醒。在本书的最后，我们将更深入地了解如何构建自定义事件循环。
 
@@ -502,14 +502,12 @@ async def listen_for_connections(server_socket: socket, loop: AbstractEventLoop)
 import asyncio
 import socket
 from asyncio import AbstractEventLoop
-async def echo(connection: socket,
-               loop: AbstractEventLoop) -> None:
+async def echo(connection: socket, loop: AbstractEventLoop) -> None:
     while data := await loop.sock_recv(connection, 1024):                ❶
         await loop.sock_sendall(connection, data)                        ❷
  
  
-async def listen_for_connection(server_socket: socket,
-                                loop: AbstractEventLoop):
+async def listen_for_connection(server_socket: socket, loop: AbstractEventLoop):
     while True:
         connection, address = await loop.sock_accept(server_socket)
         connection.setblocking(False)
@@ -567,9 +565,9 @@ Traceback (most recent call last):
 Exception: Unexpected network error
 ```
 
-这里重要的部分是从未检索到任务异常。这是什么意思？当任务内部抛出异常时，任务被视为已完成，其结果为异常。这意味着没有异常被抛出调用堆栈。此外，我们这里没有清理。如果抛出此异常，我们将无法对任务失败做出反应，因为我们从未检索到异常。
+这里重要的部分是从未检索到任务异常。这是什么意思？当任务内部抛出异常时，任务被视为已完成，其结果为异常。这意味着没有异常被抛出调用栈。此外，我们这里也没有清理。如果抛出此异常，我们将无法对任务失败做出反应，因为我们从未检索到异常。
 
-为了让异常到达我们，我们必须在等待表达式中使用任务。当我们等待失败的任务时，将在我们执行等待的地方抛出异常，并且回溯将反映这一点。如果我们在应用程序中的某个时间点不等待任务，我们就会冒着永远看不到任务引发的异常的风险。虽然我们确实在示例中看到了异常输出，这可能使我们认为这不是什么大问题，但我们可以通过一些微妙的方式来更改我们的应用程序，这样我们就永远不会看到这个消息。
+为了能够检测异常，我们必须在等待表达式中使用任务。当我们等待失败的任务时，将在我们执行等待的地方抛出异常，并且回溯将反映这一点。如果我们在应用程序中的某个时间点不等待任务，我们就会冒着永远看不到任务引发的异常的风险。虽然我们确实在示例中看到了异常输出，这可能使我们认为这不是什么大问题，但我们可以通过一些巧妙的方式来更改我们的应用程序，这样我们就永远不会看到这个消息。
 
 作为对此的演示，假设我们没有忽略我们在 listen_for_connections 中创建的回显任务，而是在一个列表中跟踪它们，如下所示：
 
@@ -593,8 +591,7 @@ async def listen_for_connection(server_socket: socket, loop: AbstractEventLoop):
 ```python
 import logging
  
-async def echo(connection: socket,
-               loop: AbstractEventLoop) -> None:
+async def echo(connection: socket, loop: AbstractEventLoop) -> None:
     try:
         while data := await loop.sock_recv(connection, 1024):
             print('got data!')
@@ -607,7 +604,7 @@ async def echo(connection: socket,
         connection.close()
 ```
 
-这将解决异常的直接问题，该异常导致我们的服务器抱怨从未检索到任务异常，因为我们在协程本身中处理它。它还将在 finally 块中正确关闭套接字，因此在发生故障时我们不会留下悬空的未关闭异常。
+这将解决异常的直接问题，该异常导致我们的服务器从未检索到任务异常，因为我们在协程本身中处理它。它还将在 finally 块中正确关闭套接字，因此在发生故障时我们不会留下悬空的未关闭异常。
 
 请务必注意，此实现将正确关闭与我们在应用程序关闭时打开的客户端的任何连接。为什么是这样？在第 2 章中，我们注意到 asyncio.run 将在我们的应用程序关闭时取消我们剩余的任何任务。我们还了解到，当我们取消任务时，每当我们尝试等待它时都会引发 CancelledError。
 
@@ -648,12 +645,10 @@ def cancel_tasks():
  
 async def main():
     loop: AbstractEventLoop = asyncio.get_running_loop()
- 
     loop.add_signal_handler(signal.SIGINT, cancel_tasks)
- 
     await delay(10)
- 
- 
+
+
 asyncio.run(main())
 ```
 
@@ -727,8 +722,7 @@ import signal
 from typing import List
  
  
-async def echo(connection: socket,
-               loop: AbstractEventLoop) -> None:
+async def echo(connection: socket, loop: AbstractEventLoop) -> None:
     try:
         while data := await loop.sock_recv(connection, 1024):
             print('got data!')
@@ -773,19 +767,19 @@ async def close_echo_tasks(echo_tasks: List[asyncio.Task]):
 async def main():
     server_socket = socket.socket()
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
- 
+
     server_address = ('127.0.0.1', 8000)
     server_socket.setblocking(False)
     server_socket.bind(server_address)
     server_socket.listen()
- 
+
     for signame in {'SIGINT', 'SIGTERM'}:
         loop.add_signal_handler(getattr(signal, signame), shutdown)
     await connection_listener(server_socket, loop)
- 
- 
+
+
 loop = asyncio.new_event_loop()
- 
+
 try:
     loop.run_until_complete(main())
 except GracefulExit:

@@ -39,7 +39,7 @@ finally:
 如果在 file.readlines 期间出现异常，这解决了文件句柄保持打开状态的问题。缺点是我们必须记住将所有内容都包装在 try finally 中，并且我们还需要记住要调用的方法以正确关闭我们的资源。这对文件来说并不难，因为我们只需要记住关闭它们，但我们仍然想要更可重用的东西，特别是因为我们的清理可能比调用一个方法更复杂。 Python 有一个语言特性来处理这个问题，称为上下文管理器。使用它，我们可以将关闭逻辑与 try/finally 块一起抽象：
 
 ```python
-with open(‘example.txt’) as file:
+with open('example.txt') as file:
     lines = file.readlines()
 ```
 
@@ -122,7 +122,7 @@ aiohttp 广泛使用异步上下文管理器来获取 HTTP 会话和连接，我
 pip install -Iv aiohttp==3.8.1
 ```
 
-这将安装最新版本的 aiohttp（撰写本文时为 3.8.1）。完成后，你就可以开始提出请求了。
+这将安装最新版本的 aiohttp（撰写本文时为 3.8.1）。完成后，你就可以开始发送请求了。
 
 aiohttp 和一般的 Web 请求都使用会话的概念。将会话视为打开一个新的浏览器窗口。在新的浏览器窗口中，你将连接到任意数量的网页，这些网页可能会向你发送浏览器为你保存的 cookie。使用会话，你将保持许多连接打开，然后可以回收。这称为连接池。连接池是一个重要的概念，它有助于我们基于 aiohttp 的应用程序的性能。由于创建连接是资源密集型的，因此创建可重用的连接池可以降低资源分配成本。会话还将在内部保存我们收到的任何 cookie，但如果需要，可以关闭此功能。
 
@@ -141,24 +141,24 @@ from util import async_timed
 async def fetch_status(session: ClientSession, url: str) -> int:
     async with session.get(url) as result:
         return result.status
- 
- 
+
+
 @async_timed()
 async def main():
     async with aiohttp.ClientSession() as session:
         url = 'https:/ / www .example .com'
         status = await fetch_status(session, url)
         print(f'Status for {url} was {status}')
- 
- 
+
+
 asyncio.run(main())
 ```
 
-当我们运行它时，我们应该看到 http://www .example .com 的输出状态为 200。在前面的清单中，我们首先使用 aiohttp.ClientSession() 在 async with 块中创建了一个客户端会话。一旦我们有了客户端会话，我们就可以自由地发出任何所需的网络请求。在这种情况下，我们定义了一个方便的方法 fetch_status_code，它将接收一个会话和一个 URL，并返回给定 URL 的状态码。在这个函数中，我们有另一个 async with 块，并使用会话对 URL 运行 GET HTTP 请求。这会给我们一个结果，然后我们可以在 with 块中处理它。在这种情况下，我们只需获取状态码并返回。
+当我们运行它时，我们应该看到 ```http://www.example.com``` 的输出状态为 200。在前面的清单中，我们首先使用 aiohttp.ClientSession() 在 async with 块中创建了一个客户端会话。一旦我们有了客户端会话，我们就可以自由地发出任何所需的网络请求。在这种情况下，我们定义了一个方便的方法 fetch_status_code，它将接收一个会话和一个 URL，并返回给定 URL 的状态码。在这个函数中，我们有另一个 async with 块，并使用会话对 URL 运行 GET HTTP 请求。这会给我们一个结果，然后我们可以在 with 块中处理它。在这种情况下，我们只需获取状态码并返回。
 
 请注意，默认情况下，ClientSession 将创建默认最多 100 个连接，为我们可以发出的并发请求数提供隐式上限。要更改此限制，我们可以创建一个 aiohttp TCPConnector 实例，指定最大连接数并将其传递给 ClientSession。要了解更多信息，请查看 https://docs.aiohttp.org/en/stable/client_advanced.html#connectors 上的 aiohttp 文档。
 
-我们将在本章中重用 fetch_status，所以让我们让这个函数可重用。我们将创建一个名为 chapter_04 的 Python 模块，其 __init__.py 包含此函数。然后，我们将在本章后面的示例中将其导入为 from chapter_04 import fetch_status。
+我们将在本章中重用 fetch_status，所以让我们让这个函数可重用。我们将创建一个名为 chapter_04 的 Python 模块，其 \_\_init\_\_.py 包含此函数。然后，我们将在本章后面的示例中将其导入为 from chapter_04 import fetch_status。
 
 > 给 Windows 用户的注意事项
 >
@@ -178,8 +178,7 @@ import asyncio
 import aiohttp
 from aiohttp import ClientSession
  
-async def fetch_status(session: ClientSession,
-                       url: str) -> int:
+async def fetch_status(session: ClientSession, url: str) -> int:
     ten_millis = aiohttp.ClientTimeout(total=.01)
     async with session.get(url, timeout=ten_millis) as result:
         return result.status
@@ -188,7 +187,7 @@ async def fetch_status(session: ClientSession,
 async def main():
     session_timeout = aiohttp.ClientTimeout(total=1, connect=.1)
     async with aiohttp.ClientSession(timeout=session_timeout) as session:
-        await fetch_status(session, 'https:/ / example .com')
+        await fetch_status(session, 'https://example.com')
  
 asyncio.run(main())
 ```
@@ -197,7 +196,7 @@ asyncio.run(main())
 
 这些示例向我们展示了 aiohttp 的基础知识。但是，我们的应用程序的性能不会受益于仅使用 asyncio 运行单个请求。当我们同时运行多个 Web 请求时，我们将开始看到真正的好处。
 
-## 4.3 并发运行任务，重温
+## 4.3 并发运行任务，重试
 在本书的前几章中，我们学习了如何创建多个任务来同时运行协同程序。为此，我们使用了 asyncio.create_task，然后等待如下任务：
 
 ```python
@@ -289,7 +288,7 @@ finished <function main at 0x10d4e1550> in 3.0031 second(s)
 
 asyncio 具有处理所有这些情况以及更多情况的便利功能。同时运行多个任务时建议使用这些功能。在接下来的部分中，我们将研究其中的一些，并研究如何在同时发出多个 Web 请求的上下文中使用它们。
 
-## 4.4 与gather同时运行请求
+## 4.4 与gather一起运行请求
 一个广泛使用的用于并发运行等待的 asyncio API 函数是 asyncio .gather。这个函数接收一系列等待对象，让我们在一行代码中同时运行它们。如果我们传入的任何 awaitables 是协程，gather 将自动将其包装在任务中以确保它同时运行。这意味着我们不必像上面使用的那样用 asyncio.create_task 单独包装所有内容。
 
 asyncio.gather 返回一个可等待的。当我们在 await 表达式中使用它时，它会暂停，直到我们传递给它的所有可等待对象都完成为止。一旦我们传入的所有内容都完成，asyncio.gather 将返回完成结果的列表。
@@ -309,7 +308,7 @@ from util import async_timed
 @async_timed()
 async def main():
     async with aiohttp.ClientSession() as session:
-        urls = ['https:/ / example .com' for _ in range(1000)]
+        urls = ['https://example.com' for _ in range(1000)]
         requests = [fetch_status(session, url) for url in urls]   ❶
         status_codes = await asyncio.gather(*requests)            ❷
         print(status_codes)
@@ -328,7 +327,7 @@ asyncio.run(main())
 @async_timed()
 async def main():
     async with aiohttp.ClientSession() as session:
-        urls = ['https:/ / example .com' for _ in range(1000)]
+        urls = ['https://example.com' for _ in range(1000)]
         status_codes = [await fetch_status_code(session, url) for url in urls]
         print(status_codes)
 ```
@@ -376,7 +375,7 @@ asyncio.gather 为我们提供了一个可选参数 return_exceptions，它允�
 @async_timed()
 async def main():
     async with aiohttp.ClientSession() as session:
-        urls = ['https://example .com', 'python://example .com']
+        urls = ['https://example.com', 'python://example.com']
         tasks = [fetch_status_code(session, url) for url in urls]
         status_codes = await asyncio.gather(*tasks)
         print(status_codes)
@@ -407,7 +406,7 @@ Process finished with exit code 1
 @async_timed()
 async def main():
     async with aiohttp.ClientSession() as session:
-        urls = ['https://example .com', 'python://example .com']
+        urls = ['https://example.com', 'python://example.com']
         tasks = [fetch_status_code(session, url) for url in urls]
         results = await asyncio.gather(*tasks, return_exceptions=True)
  
@@ -464,9 +463,9 @@ from chapter_04 import fetch_status
 @async_timed()
 async def main():
     async with aiohttp.ClientSession() as session:
-        fetchers = [fetch_status(session, 'https:/ / www.example .com', 1),
-                    fetch_status(session, 'https:/ / www.example .com', 1),
-                    fetch_status(session, 'https:/ / www.example .com', 10)]
+        fetchers = [fetch_status(session, 'https://www.example.com', 1),
+                    fetch_status(session, 'https://www.example.com', 1),
+                    fetch_status(session, 'https://www.example.com', 10)]
  
         for finished_task in asyncio.as_completed(fetchers):
             print(await finished_task)
@@ -512,9 +511,9 @@ from chapter_04 import fetch_status
 @async_timed()
 async def main():
     async with aiohttp.ClientSession() as session:
-        fetchers = [fetch_status(session, 'https:/ / example .com', 1),
-                    fetch_status(session, 'https:/ / example .com', 10),
-                    fetch_status(session, 'https:/ / example .com', 10)]
+        fetchers = [fetch_status(session, 'https://example.com', 1),
+                    fetch_status(session, 'https://example.com', 10),
+                    fetch_status(session, 'https://example.com', 10)]
  
         for done_task in asyncio.as_completed(fetchers, timeout=2):
             try:
@@ -571,8 +570,8 @@ from chapter_04 import fetch_status
 async def main():
     async with aiohttp.ClientSession() as session:
         fetchers = \
-            [asyncio.create_task(fetch_status(session, 'https:/ /example.com')),
-             asyncio.create_task(fetch_status(session, 'https:/ /example.com'))]
+            [asyncio.create_task(fetch_status(session, 'https://example.com')),
+             asyncio.create_task(fetch_status(session, 'https://example.com'))]
         done, pending = await asyncio.wait(fetchers)
  
         print(f'Done task count: {len(done)}')
@@ -612,8 +611,8 @@ import logging
 @async_timed()
 async def main():
     async with aiohttp.ClientSession() as session:
-        good_request = fetch_status(session, 'https:/ / www .example .com')
-        bad_request = fetch_status(session, 'python:/ /bad')
+        good_request = fetch_status(session, 'https://www.example.com')
+        bad_request = fetch_status(session, 'python://bad')
  
         fetchers = [asyncio.create_task(good_request),
                     asyncio.create_task(bad_request)]
@@ -628,8 +627,7 @@ async def main():
             if done_task.exception() is None:
                 print(done_task.result())
             else:
-                logging.error("Request got an exception",
-                              exc_info=done_task.exception())
+                logging.error("Request got an exception", exc_info=done_task.exception())
  
  
 asyncio.run(main())
@@ -676,12 +674,11 @@ from util import async_timed
 @async_timed()
 async def main():
     async with aiohttp.ClientSession() as session:
-        fetchers = \
-            [asyncio.create_task(fetch_status(session, 'python:/ / bad.com')),
-             asyncio.create_task(fetch_status(session, 'https:/ / www.example
-                                              .com', delay=3)),
-             asyncio.create_task(fetch_status(session, 'https:/ / www.example
-                                              .com', delay=3))]
+        fetchers = [
+            asyncio.create_task(fetch_status(session, 'python://bad.com')),
+            asyncio.create_task(fetch_status(session, 'https://www.example.com', delay=3)),
+            asyncio.create_task(fetch_status(session, 'https://www.example.com', delay=3))
+        ]
  
         done, pending = await asyncio.wait(fetchers, return_when=asyncio.FIRST_EXCEPTION)
  
@@ -691,8 +688,7 @@ async def main():
             if done_task.exception() is None:
                 print(done_task.result())
             else:
-                logging.error("Request got an exception",
-                              exc_info=done_task.exception())
+                logging.error("Request got an exception", exc_info=done_task.exception())
  
         for pending_task in pending:
             pending_task.cancel()
@@ -734,10 +730,12 @@ from chapter_04 import fetch_status
 @async_timed()
 async def main():
     async with aiohttp.ClientSession() as session:
-        url = 'https:/ / www .example .com'
-        fetchers = [asyncio.create_task(fetch_status(session, url)),
-                    asyncio.create_task(fetch_status(session, url)),
-                    asyncio.create_task(fetch_status(session, url))]
+        url = 'https://www.example.com'
+        fetchers = [
+            asyncio.create_task(fetch_status(session, url)),
+            asyncio.create_task(fetch_status(session, url)),
+            asyncio.create_task(fetch_status(session, url))
+        ]
  
         done, pending = await asyncio.wait(fetchers, return_when=asyncio.FIRST_COMPLETED)
  
@@ -778,9 +776,11 @@ from util import async_timed
 async def main():
     async with aiohttp.ClientSession() as session:
         url = 'https://www.example.com'
-        pending = [asyncio.create_task(fetch_status(session, url)),
-                   asyncio.create_task(fetch_status(session, url)),
-                   asyncio.create_task(fetch_status(session, url))]
+        pending = [
+            asyncio.create_task(fetch_status(session, url)),
+            asyncio.create_task(fetch_status(session, url)),
+            asyncio.create_task(fetch_status(session, url))
+        ]
  
         while pending:
             done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
@@ -842,9 +842,11 @@ finished <function main at 0x1100f11f0> in 0.1304 second(s)
 async def main():
     async with aiohttp.ClientSession() as session:
         url = 'https://example.com'
-        fetchers = [asyncio.create_task(fetch_status(session, url),
-                    asyncio.create_task(fetch_status(session, url),
-                    asyncio.create_task(fetch_status(session, url, delay=3))]
+        fetchers = [
+            asyncio.create_task(fetch_status(session, url)),
+            asyncio.create_task(fetch_status(session, url)),
+            asyncio.create_task(fetch_status(session, url, delay=3))
+        ]
  
         done, pending = await asyncio.wait(fetchers, timeout=1)
  
@@ -885,7 +887,7 @@ from chapter_04 import fetch_status
 async def main():
     async with aiohttp.ClientSession() as session:
         api_a = fetch_status(session, 'https://www.example.com')
-        api_b = fetch_status(session, 'https:/ /www.example.com', delay=2)
+        api_b = fetch_status(session, 'https://www.example.com', delay=2)
  
         done, pending = await asyncio.wait([api_a, api_b], timeout=1)
  

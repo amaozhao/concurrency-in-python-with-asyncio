@@ -42,11 +42,13 @@ import asyncpg
 import asyncio
  
 async def main():
-    connection = await asyncpg.connect(host='127.0.0.1',
-                                       port=5432,
-                                       user='postgres',
-                                       database='postgres',
-                                       password='password')
+    connection = await asyncpg.connect(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        database='postgres',
+        password='password'
+    )
     version = connection.get_server_version()
     print(f'Connected! Postgres version is {version}')
     await connection.close()
@@ -169,18 +171,22 @@ import asyncio
  
  
 async def main():
-    connection = await asyncpg.connect(host='127.0.0.1',
-                                       port=5432,
-                                       user='postgres',
-                                       database='products',
-                                       password='password')
-    statements = [CREATE_BRAND_TABLE,
-                  CREATE_PRODUCT_TABLE,
-                  CREATE_PRODUCT_COLOR_TABLE,
-                  CREATE_PRODUCT_SIZE_TABLE,
-                  CREATE_SKU_TABLE,
-                  SIZE_INSERT,
-                  COLOR_INSERT]
+    connection = await asyncpg.connect(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        database='products',
+        password='password'
+    )
+    statements = [
+        CREATE_BRAND_TABLE,
+        CREATE_PRODUCT_TABLE,
+        CREATE_PRODUCT_COLOR_TABLE,
+        CREATE_PRODUCT_SIZE_TABLE,
+        CREATE_SKU_TABLE,
+        SIZE_INSERT,
+        COLOR_INSERT
+    ]
  
     print('Creating the product database...')
     for statement in statements:
@@ -205,11 +211,13 @@ import asyncio
 from asyncpg import Record
 from typing import List
 async def main():
-    connection = await asyncpg.connect(host='127.0.0.1',
-                                       port=5432,
-                                       user='postgres',
-                                       database='products',
-                                       password='password')
+    connection = await asyncpg.connect(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        database='products',
+        password='password'
+    )
     await connection.execute("INSERT INTO brand VALUES(DEFAULT, 'Levis')")
     await connection.execute("INSERT INTO brand VALUES(DEFAULT, 'Seven')")
  
@@ -281,11 +289,13 @@ async def insert_brands(common_words, connection) -> int:
  
 async def main():
     common_words = load_common_words()
-    connection = await asyncpg.connect(host='127.0.0.1',
-                                       port=5432,
-                                       user='postgres',
-                                       database='products',
-                                       password='password')
+    connection = await asyncpg.connect(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        database='products',
+        password='password'
+    )
     await insert_brands(common_words, connection)
  
  
@@ -333,24 +343,24 @@ def gen_skus(product_id_start: int,
  
 async def main():
     common_words = load_common_words()
-    connection = await asyncpg.connect(host='127.0.0.1',
-                                       port=5432,
-                                       user='postgres',
-                                       database='products',
-                                       password='password')
+    connection = await asyncpg.connect(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        database='products',
+        password='password'
+    )
  
-    product_tuples = gen_products(common_words,
-                                  brand_id_start=1,
-                                  brand_id_end=100,
-                                  products_to_create=1000)
-    await connection.executemany("INSERT INTO product VALUES(DEFAULT, $1, $2)",
-                                 product_tuples)
+    product_tuples = gen_products(
+        common_words,
+        brand_id_start=1,
+        brand_id_end=100,
+        products_to_create=1000
+    )
+    await connection.executemany("INSERT INTO product VALUES(DEFAULT, $1, $2)", product_tuples)
  
-    sku_tuples = gen_skus(product_id_start=1,
-                          product_id_end=1000,
-                          skus_to_create=100000)
-    await connection.executemany("INSERT INTO sku VALUES(DEFAULT, $1, $2, $3)",
-                                 sku_tuples)
+    sku_tuples = gen_skus(product_id_start=1, product_id_end=1000, skus_to_create=100000)
+    await connection.executemany("INSERT INTO sku VALUES(DEFAULT, $1, $2, $3)", sku_tuples)
  
     await connection.close()
  
@@ -382,14 +392,15 @@ WHERE p.product_id = 100"""
 
 ```python
 async def main():
-    connection = await asyncpg.connect(host='127.0.0.1',
-                                       port=5432,
-                                       user='postgres',
-                                       database='products',
-                                       password='password')
+    connection = await asyncpg.connect(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        database='products',
+        password='password'
+    )
     print('Creating the product database...')
-    queries = [connection.execute(product_query),
-               connection.execute(product_query)]
+    queries = [connection.execute(product_query), connection.execute(product_query)]
     results = await asyncio.gather(*queries)
 ```
 
@@ -448,16 +459,16 @@ async def query_product(pool):
  
  
 async def main():
-    async with asyncpg.create_pool(host='127.0.0.1',
-                                   port=5432,
-                                   user='postgres',
-                                   password='password',
-                                   database='products',
-                                   min_size=6,
-                                   max_size=6) as pool:    ❶
+    async with asyncpg.create_pool(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        password='password',
+        database='products',
+        min_size=6,
+        max_size=6) as pool:    ❶
  
-        await asyncio.gather(query_product(pool),
-                             query_product(pool))          ❷
+        await asyncio.gather(query_product(pool), query_product(pool))          ❷
  
  
 asyncio.run(main())
@@ -509,13 +520,14 @@ async def query_products_concurrently(pool, queries):
  
  
 async def main():
-    async with asyncpg.create_pool(host='127.0.0.1',
-                                   port=5432,
-                                   user='postgres',
-                                   password='password',
-                                   database='products',
-                                   min_size=6,
-                                   max_size=6) as pool:
+    async with asyncpg.create_pool(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        password='password',
+        database='products',
+        min_size=6,
+        max_size=6) as pool:
         await query_products_synchronously(pool, 10000)
         await query_products_concurrently(pool, 10000)
  
@@ -547,19 +559,18 @@ import asyncio
 import asyncpg
  
 async def main():
-    connection = await asyncpg.connect(host='127.0.0.1',
-                                       port=5432,
-                                       user='postgres',
-                                       database='products',
-                                       password='password')
+    connection = await asyncpg.connect(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        database='products',
+        password='password'
+    )
     async with connection.transaction():                      ❶
-        await connection.execute("INSERT INTO brand "
-                                 "VALUES(DEFAULT, 'brand_1')")
-        await connection.execute("INSERT INTO brand "
-                                 "VALUES(DEFAULT, 'brand_2')")
+        await connection.execute("INSERT INTO brand VALUES(DEFAULT, 'brand_1')")
+        await connection.execute("INSERT INTO brand VALUES(DEFAULT, 'brand_2')")
  
-    query = """SELECT brand_name FROM brand
-                WHERE brand_name LIKE 'brand%'"""
+    query = """SELECT brand_name FROM brand WHERE brand_name LIKE 'brand%'"""
     brands = await connection.fetch(query)                    ❷
     print(brands)
  
@@ -580,11 +591,13 @@ import logging
 import asyncpg
  
 async def main():
-    connection = await asyncpg.connect(host='127.0.0.1',
-                                       port=5432,
-                                       user='postgres',
-                                       database='products',
-                                       password='password')
+    connection = await asyncpg.connect(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        database='products',
+        password='password'
+    )
     try:
         async with connection.transaction():
             insert_brand = "INSERT INTO brand VALUES(9999, 'big_brand')"
@@ -593,8 +606,7 @@ async def main():
     except Exception:
         logging.exception('Error while running transaction')  ❷
     finally:
-        query = """SELECT brand_name FROM brand
-                    WHERE brand_name LIKE 'big_%'"""
+        query = """SELECT brand_name FROM brand WHERE brand_name LIKE 'big_%'"""
         brands = await connection.fetch(query)                ❸
         print(f'Query result was: {brands}')
  
@@ -637,11 +649,13 @@ import logging
  
  
 async def main():
-    connection = await asyncpg.connect(host='127.0.0.1',
-                                       port=5432,
-                                       user='postgres',
-                                       database='products',
-                                       password='password')
+    connection = await asyncpg.connect(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        database='products',
+        password='password'
+    )
     async with connection.transaction():
         await connection.execute("INSERT INTO brand VALUES(DEFAULT, 'my_new_brand')")
  
@@ -674,18 +688,18 @@ from asyncpg.transaction import Transaction
  
  
 async def main():
-    connection = await asyncpg.connect(host='127.0.0.1',
-                                       port=5432,
-                                       user='postgres',
-                                       database='products',
-                                       password='password')
+    connection = await asyncpg.connect(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        database='products',
+        password='password'
+    )
     transaction: Transaction = connection.transaction()          ❶
     await transaction.start()                                    ❷
     try:
-        await connection.execute("INSERT INTO brand "
-                                 "VALUES(DEFAULT, 'brand_1')")
-        await connection.execute("INSERT INTO brand "
-                                 "VALUES(DEFAULT, 'brand_2')")
+        await connection.execute("INSERT INTO brand VALUES(DEFAULT, 'brand_1')")
+        await connection.execute("INSERT INTO brand VALUES(DEFAULT, 'brand_2')")
     except asyncpg.PostgresError:
         print('Errors, rolling back transaction!')
         await transaction.rollback()                             ❸
@@ -693,8 +707,7 @@ async def main():
         print('No errors, committing transaction!')
         await transaction.commit()                               ❹
  
-    query = """SELECT brand_name FROM brand
-                WHERE brand_name LIKE 'brand%'"""
+    query = """SELECT brand_name FROM brand WHERE brand_name LIKE 'brand%'"""
     brands = await connection.fetch(query)
     print(brands)
  
@@ -788,11 +801,13 @@ import asyncpg
  
  
 async def main():
-    connection = await asyncpg.connect(host='127.0.0.1',
-                                       port=5432,
-                                       user='postgres',
-                                       database='products',
-                                       password='password')
+    connection = await asyncpg.connect(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        database='products',
+        password='password'
+    )
  
     query = 'SELECT product_id, product_name FROM product'
     async with connection.transaction():
@@ -817,11 +832,13 @@ import asyncio
  
  
 async def main():
-    connection = await asyncpg.connect(host='127.0.0.1',
-                                       port=5432,
-                                       user='postgres',
-                                       database='products',
-                                       password='password')
+    connection = await asyncpg.connect(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        database='products',
+        password='password'
+    )
     async with connection.transaction():
         query = 'SELECT product_id, product_name from product'
         cursor = await connection.cursor(query)                 ❶
@@ -866,11 +883,13 @@ async def take(generator, to_take: int):
  
  
 async def main():
-    connection = await asyncpg.connect(host='127.0.0.1',
-                                       port=5432,
-                                       user='postgres',
-                                       database='products',
-                                       password='password')
+    connection = await asyncpg.connect(
+        host='127.0.0.1',
+        port=5432,
+        user='postgres',
+        database='products',
+        password='password'
+    )
     async with connection.transaction():
         query = 'SELECT product_id, product_name from product'
         product_generator = connection.cursor(query)
